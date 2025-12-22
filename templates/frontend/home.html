@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}InstaStore - پیدا کردن فروشگاه اینستاگرامی{% endblock %}
+
+{% block content %}
+<div class="text-center mb-5">
+    <h1 class="display-4 mb-3">🛍️ فروشگاه اختصاصی پیج اینستاگرام شما</h1>
+    <p class="lead text-muted">لینک فروشگاه خود را دریافت کنید و مستقیم از اینستاگرام بفروشید</p>
+    
+    <!-- جستجوی فروشگاه -->
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-6">
+            <div class="input-group">
+                <input type="text" 
+                       class="form-control" 
+                       placeholder="نام کاربری اینستاگرام (مثال: @jadeh_poshak)"
+                       id="shop-search">
+                <button class="btn btn-primary" onclick="searchShop()">
+                    <i class="bi bi-search"></i> پیدا کن
+                </button>
+            </div>
+            <div class="mt-2 text-muted small">
+                یا لینک مستقیم فروشگاه خود را وارد کنید
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- فروشگاه‌های پرطرفدار -->
+<h3 class="mb-4">✨ فروشگاه‌های فعال</h3>
+<div class="row" id="featured-shops">
+    {% for shop in featured_shops %}
+    <div class="col-md-4 col-lg-3 mb-4">
+        <div class="card shop-card h-100 text-center">
+            <div class="card-body">
+                <div class="mb-3">
+                    <i class="bi bi-shop-window fs-1 text-primary"></i>
+                </div>
+                <h5 class="card-title">{{ shop.shop_name }}</h5>
+                <p class="card-text text-muted small">{{ shop.instagram_username }}</p>
+                <a href="/shop/{{ shop.slug }}/" 
+                   class="btn btn-outline-primary btn-sm">
+                   مشاهده فروشگاه
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+        <p class="text-muted">هنوز فروشگاهی ثبت نشده است.</p>
+        <a href="/register/" class="btn btn-primary">اولین فروشگاه باشید</a>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- اطلاعات برای صاحبان پیج -->
+<div class="row mt-5">
+    <div class="col-md-6">
+        <div class="card border-success">
+            <div class="card-body">
+                <h5 class="card-title text-success">
+                    <i class="bi bi-instagram"></i> برای صاحبان پیج
+                </h5>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> رایگان ثبت‌نام کنید</li>
+                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> لینک اختصاصی دریافت کنید</li>
+                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> در بیو اینستاگرام قرار دهید</li>
+                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> شروع به فروش کنید</li>
+                </ul>
+                <a href="/register/" class="btn btn-success">ثبت‌نام رایگان</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card border-primary">
+            <div class="card-body">
+                <h5 class="card-title text-primary">
+                    <i class="bi bi-cart-check"></i> برای مشتریان
+                </h5>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="bi bi-check-circle text-primary"></i> از پیج اینستاگرام وارد شوید</li>
+                    <li class="mb-2"><i class="bi bi-check-circle text-primary"></i> محصولات را ببینید</li>
+                    <li class="mb-2"><i class="bi bi-check-circle text-primary"></i> با چند کلیک خرید کنید</li>
+                    <li class="mb-2"><i class="bi bi-check-circle text-primary"></i> پیگیری سفارش</li>
+                </ul>
+                <p class="text-muted small">لینک فروشگاه را از پیج اینستاگرام مورد نظر دریافت کنید</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function searchShop() {
+    const username = document.getElementById('shop-search').value.trim();
+    if (username) {
+        // حذف @ از ابتدا اگر وجود دارد
+        const cleanUsername = username.replace('@', '');
+        // هدایت به صفحه فروشگاه
+        window.location.href = `/shop/${cleanUsername}/`;
+    }
+}
+</script>
+{% endblock %}

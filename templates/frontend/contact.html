@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+
+{% block title %}تماس با ما - InstaStore{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <!-- هدر -->
+        <div class="text-center mb-5">
+            <h1 class="display-5 fw-bold mb-3">تماس با ما</h1>
+            <p class="lead text-muted">
+                ما اینجاییم تا به سوالات شما پاسخ دهیم
+            </p>
+        </div>
+        
+        <!-- راه‌های ارتباطی -->
+        <div class="row mb-5">
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 border-0 shadow-sm text-center">
+                    <div class="card-body p-4">
+                        <div class="bg-primary bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
+                            <i class="bi bi-envelope text-primary fs-2"></i>
+                        </div>
+                        <h5 class="card-title">ایمیل پشتیبانی</h5>
+                        <p class="card-text text-muted">
+                            برای پشتیبانی فنی، گزارش مشکلات و پیشنهادات
+                        </p>
+                        <a href="mailto:support@instastore.ir" class="btn btn-outline-primary">
+                            support@instastore.ir
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 border-0 shadow-sm text-center">
+                    <div class="card-body p-4">
+                        <div class="bg-success bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
+                            <i class="bi bi-telegram text-success fs-2"></i>
+                        </div>
+                        <h5 class="card-title">کانال تلگرام</h5>
+                        <p class="card-text text-muted">
+                            اخبار، آموزش‌ها و به‌روزرسانی‌ها
+                        </p>
+                        <a href="https://t.me/instastore_ir" target="_blank" class="btn btn-outline-success">
+                            @instastore_ir
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 border-0 shadow-sm text-center">
+                    <div class="card-body p-4">
+                        <div class="bg-info bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
+                            <i class="bi bi-whatsapp text-info fs-2"></i>
+                        </div>
+                        <h5 class="card-title">پشتیبانی واتس‌اپ</h5>
+                        <p class="card-text text-muted">
+                            پاسخ سریع به سوالات شما
+                        </p>
+                        <a href="https://wa.me/989123456789" target="_blank" class="btn btn-outline-info">
+                            ۰۹۱۲ ۳۴۵ ۶۷۸۹
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- فرم تماس -->
+        <div class="card border-0 shadow-lg mb-5">
+            <div class="card-body p-4">
+                <h3 class="card-title mb-4">📝 پیام مستقیم به ما</h3>
+                
+                <form id="contact-form">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">نام کامل *</label>
+                            <input type="text" class="form-control" id="name" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">ایمیل *</label>
+                            <input type="email" class="form-control" id="email" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="subject" class="form-label">موضوع *</label>
+                        <select class="form-select" id="subject" required>
+                            <option value="" selected disabled>انتخاب کنید</option>
+                            <option value="support">پشتیبانی فنی</option>
+                            <option value="sales">همکاری و فروش</option>
+                            <option value="suggestion">پیشنهاد و انتقاد</option>
+                            <option value="other">سایر</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="message" class="form-label">پیام شما *</label>
+                        <textarea class="form-control" id="message" rows="5" required></textarea>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-send"></i> ارسال پیام
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- سوالات متداول -->
+        <div class="card border-0 bg-light">
+            <div class="card-body p-4">
+                <h3 class="card-title mb-4">❓ سوالات متداول</h3>
+                
+                <div class="accordion" id="faqAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#faq1">
+                                هزینه استفاده از InstaStore چقدر است؟
+                            </button>
+                        </h2>
+                        <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                <strong>کاملاً رایگان!</strong> ما به مدت نامحدود هیچ هزینه‌ای از شما دریافت نمی‌کنیم. 
+                                هدف ما کمک به رشد کسب‌وکارهای اینستاگرامی است.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#faq2">
+                                چقدر طول می‌کشد تا فروشگاه من آماده شود؟
+                            </button>
+                        </h2>
+                        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                کمتر از ۵ دقیقه! پس از ثبت‌نام، فروشگاه شما بلافاصله ایجاد می‌شود و می‌توانید 
+                                لینک آن را در بیو اینستاگرام خود قرار دهید.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#faq3">
+                                آیا نیاز به دانش برنامه‌نویسی دارم؟
+                            </button>
+                        </h2>
+                        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                خیر! پنل مدیریت InstaStore بسیار ساده و کاربرپسند طراحی شده است. 
+                                هر کسی می‌تواند بدون هیچ دانش فنی از آن استفاده کند.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#faq4">
+                                چگونه می‌توانم محصولاتم را اضافه کنم؟
+                            </button>
+                        </h2>
+                        <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                پس از ورود به پنل مدیریت، از منوی «محصولات» گزینه «افزودن محصول جدید» را انتخاب کنید. 
+                                می‌توانید عکس، قیمت، موجودی و سایر مشخصات محصول را وارد نمایید.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- اطلاعات تماس -->
+        <div class="text-center mt-5">
+            <h4 class="mb-3">اطلاعات تماس</h4>
+            <p class="text-muted mb-2">
+                <i class="bi bi-geo-alt me-2"></i> تهران، خیابان ولیعصر
+            </p>
+            <p class="text-muted mb-2">
+                <i class="bi bi-clock me-2"></i> پشتیبانی: ۲۴ ساعته
+            </p>
+            <p class="text-muted">
+                <i class="bi bi-phone me-2"></i> تلفن: ۰۲۱-۱۲۳۴۵۶۷۸
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('contact-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // در حالت واقعی، اینجا فرم به سرور ارسال می‌شود
+    // فعلاً فقط یک پیام نمایش می‌دهیم
+    alert('پیام شما با موفقیت ارسال شد! به زودی با شما تماس خواهیم گرفت.');
+    this.reset();
+});
+</script>
+{% endblock %}

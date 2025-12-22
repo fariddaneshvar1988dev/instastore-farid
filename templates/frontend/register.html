@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}ثبت‌نام فروشگاه اینستاگرامی - InstaStore{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <h3 class="card-title text-center mb-4 text-primary">
+                    <i class="bi bi-shop"></i> ثبت‌نام فروشگاه جدید
+                </h3>
+                
+                <form method="POST" action="/api/sellers/register/" id="register-form">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">نام کاربری *</label>
+                            <input type="text" name="username" class="form-control" 
+                                   placeholder="برای ورود به پنل" required>
+                            <div class="form-text">حداقل ۳ کاراکتر</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">رمز عبور *</label>
+                            <input type="password" name="password" class="form-control" 
+                                   placeholder="حداقل ۸ کاراکتر" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">نام کاربری اینستاگرام *</label>
+                        <div class="input-group">
+                            <span class="input-group-text">@</span>
+                            <input type="text" name="instagram_username" class="form-control" 
+                                   placeholder="jadeh_poshak" required>
+                        </div>
+                        <div class="form-text">بدون @ وارد کنید</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">نام فروشگاه *</label>
+                        <input type="text" name="shop_name" class="form-control" 
+                               placeholder="مثال: جادۀ پوشاک" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">شماره تماس *</label>
+                        <input type="tel" name="phone_number" class="form-control" 
+                               placeholder="09123456789" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">ایمیل (اختیاری)</label>
+                        <input type="email" name="email" class="form-control" 
+                               placeholder="shop@example.com">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">درباره فروشگاه</label>
+                        <textarea name="bio" class="form-control" rows="3" 
+                                  placeholder="توضیح کوتاهی درباره فروشگاه خود بنویسید..."></textarea>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-circle"></i> ثبت‌نام و ایجاد فروشگاه
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="mt-4 text-center">
+                    <p class="text-muted mb-2">
+                        با ثبت‌نام موافقت می‌کنید با 
+                        <a href="/terms/" class="text-decoration-none">قوانین و مقررات</a>
+                    </p>
+                    <p class="mb-0">
+                        قبلاً ثبت‌نام کرده‌اید؟ 
+                        <a href="/login/" class="text-decoration-none">ورود به پنل</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- مزایای ثبت‌نام -->
+        <div class="card mt-4 border-success">
+            <div class="card-body">
+                <h5 class="card-title text-success">
+                    <i class="bi bi-gift"></i> مزایای فروشگاه InstaStore
+                </h5>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> رایگان برای همیشه</li>
+                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> لینک اختصاصی فروشگاه</li>
+                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> پنل مدیریت ساده</li>
+                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> بدون نیاز به کدنویسی</li>
+                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> پشتیبانی ۲۴ ساعته</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('register-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // تبدیل instagram_username به فرمت صحیح
+    const instagramInput = this.querySelector('[name="instagram_username"]');
+    if (instagramInput.value && !instagramInput.value.startsWith('@')) {
+        instagramInput.value = '@' + instagramInput.value;
+    }
+    
+    // ارسال فرم
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    fetch(this.action, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': data.csrfmiddlewaretoken
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.shop && result.shop.shop_url) {
+            alert('✅ فروشگاه شما با موفقیت ایجاد شد!\n' +
+                  '🔗 آدرس فروشگاه: ' + result.shop.shop_url);
+            window.location.href = result.shop.shop_url;
+        } else if (result.errors) {
+            let errorMsg = 'خطا در ثبت‌نام:\n';
+            for (const [key, value] of Object.entries(result.errors)) {
+                errorMsg += `• ${value}\n`;
+            }
+            alert(errorMsg);
+        }
+    })
+    .catch(error => {
+        alert('خطا در ارتباط با سرور');
+    });
+});
+</script>
+{% endblock %}

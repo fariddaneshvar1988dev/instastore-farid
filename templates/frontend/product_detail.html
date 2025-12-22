@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ product.name }} - {{ shop.shop_name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- تصویر محصول -->
+    <div class="col-md-6">
+        <div class="card">
+            <img src="https://via.placeholder.com/500x500?text=Product+Image" 
+                 class="card-img-top" 
+                 alt="{{ product.name }}">
+        </div>
+    </div>
+    
+    <!-- اطلاعات محصول -->
+    <div class="col-md-6">
+        <h1>{{ product.name }}</h1>
+        <p class="text-muted">{{ shop.shop_name }}</p>
+        
+        <div class="mb-3">
+            <span class="badge bg-primary">{{ product.category.name }}</span>
+            {% if product.size %}
+            <span class="badge bg-secondary">{{ product.size }}</span>
+            {% endif %}
+            {% if product.color %}
+            <span class="badge bg-info">{{ product.color }}</span>
+            {% endif %}
+        </div>
+        
+        <div class="mb-3">
+            <h3 class="text-success">{{ product.get_price_in_toman|floatformat:0|floatformat:0 }} تومان</h3>
+        </div>
+        
+        <div class="mb-4">
+            <h5>توضیحات محصول:</h5>
+            <p>{{ product.description }}</p>
+        </div>
+        
+        {% if product.stock > 0 %}
+        <div class="d-grid gap-2">
+            <button class="btn btn-primary btn-lg">
+                <i class="bi bi-cart-plus"></i> افزودن به سبد خرید
+            </button>
+            <button class="btn btn-outline-secondary">
+                <i class="bi bi-whatsapp"></i> خرید از طریق واتس‌اپ
+            </button>
+        </div>
+        {% else %}
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i> این محصول در حال حاضر ناموجود است
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- محصولات مرتبط -->
+{% if related_products %}
+<div class="mt-5">
+    <h4>محصولات مرتبط</h4>
+    <div class="row">
+        {% for related in related_products %}
+        <div class="col-md-3">
+            <div class="card">
+                <img src="https://via.placeholder.com/300x200?text=Related" 
+                     class="card-img-top" 
+                     alt="{{ related.name }}">
+                <div class="card-body">
+                    <h6>{{ related.name }}</h6>
+                    <p class="text-success">{{ related.get_price_in_toman|floatformat:0|floatformat:0 }} تومان</p>
+                    <a href="/shop/{{ shop.slug }}/product/{{ related.id }}/" 
+                       class="btn btn-sm btn-outline-primary w-100">
+                        مشاهده
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

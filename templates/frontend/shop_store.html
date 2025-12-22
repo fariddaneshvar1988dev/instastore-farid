@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ shop.shop_name }} - InstaStore{% endblock %}
+
+{% block content %}
+<!-- هدر فروشگاه -->
+<div class="shop-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-6 mb-2">{{ shop.shop_name }}</h1>
+            <p class="mb-2">
+                <i class="bi bi-instagram"></i> 
+                <a href="https://instagram.com/{{ shop.instagram_username|cut:'@' }}" 
+                   target="_blank" 
+                   class="text-white text-decoration-none">
+                    {{ shop.instagram_username }}
+                </a>
+            </p>
+            {% if shop.bio %}
+            <p class="mb-0">{{ shop.bio }}</p>
+            {% endif %}
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="bg-white text-dark d-inline-block p-3 rounded">
+                <div class="small text-muted">تماس با فروشگاه</div>
+                <div class="fw-bold">{{ shop.phone_number }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- فیلترها و جستجو -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">🔍 فیلتر محصولات</h6>
+                
+                <!-- جستجو -->
+                <div class="mb-3">
+                    <input type="text" 
+                           class="form-control form-control-sm" 
+                           placeholder="جستجوی محصول..."
+                           hx-get="/shop/{{ shop.slug }}/search/"
+                           hx-trigger="keyup changed delay:500ms"
+                           hx-target="#products-grid"
+                           name="q">
+                </div>
+                
+                <!-- دسته‌بندی‌ها -->
+                <h6 class="mt-3 mb-2">دسته‌بندی</h6>
+                <div class="list-group list-group-flush">
+                    <a href="/shop/{{ shop.slug }}/" 
+                       class="list-group-item list-group-item-action {% if not request.GET.category %}active{% endif %}">
+                       همه محصولات
+                    </a>
+                    {% for category in categories %}
+                    <a href="/shop/{{ shop.slug }}/?category={{ category.id }}" 
+                       class="list-group-item list-group-item-action {% if request.GET.category == category.id|stringformat:'i' %}active{% endif %}">
+                       {{ category.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- لیست محصولات -->
+    <div class="col-md-9">
+        <div class="row" id="products-grid">
+            {% include 'partials/product_list.html' %}
+        </div>
+        
+        <!-- دکمه بارگذاری بیشتر -->
+        {% if products|length >= 12 %}
+        <div class="text-center mt-4">
+            <button class="btn btn-outline-primary"
+                    hx-get="/shop/{{ shop.slug }}/load-more/?offset={{ products|length }}"
+                    hx-target="#products-grid"
+                    hx-swap="beforeend">
+                <i class="bi bi-plus-circle"></i> محصولات بیشتر
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
