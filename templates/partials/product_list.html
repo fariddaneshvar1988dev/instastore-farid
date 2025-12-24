@@ -1,85 +1,51 @@
-{% for product in products %}
-<div class="col-md-4 col-lg-3 mb-4">
-    <div class="card product-card h-100">
-        <!-- تصویر محصول -->
-        <div style="height: 200px; overflow: hidden; position: relative;">
-            <img src="{{ product.images.0|default:'/static/no-image.jpg' }}" 
-                 class="card-img-top" 
-                 style="height: 100%; width: 100%; object-fit: cover;"
-                 alt="{{ product.name }}"
-                 loading="lazy">
-            
-            <!-- وضعیت موجودی -->
-            {% if product.stock <= 0 %}
-            <div class="position-absolute top-0 start-0 bg-danger text-white p-1 small">
-                ناموجود
-            </div>
-            {% elif product.stock < 5 %}
-            <div class="position-absolute top-0 start-0 bg-warning text-dark p-1 small">
-                آخرین موجودی
+{% load humanize %}
+
+<div class="row row-cols-1 row-cols-md-3 g-4" id="product-list">
+    {% for product in products %}
+    <div class="col">
+        <div class="card h-100 shadow-sm">
+            {% if product.images %}
+            <img src="{{ product.images.0 }}" class="card-img-top" alt="{{ product.name }}" style="height: 250px; object-fit: cover;">
+            {% else %}
+            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 250px;">
+                <span class="text-muted">بدون تصویر</span>
             </div>
             {% endif %}
-        </div>
-        
-        <div class="card-body d-flex flex-column">
-            <!-- نام و توضیحات -->
-            <h6 class="card-title">{{ product.name|truncatechars:50 }}</h6>
             
-            <div class="mb-2">
-                {% if product.category %}
-                <span class="badge bg-secondary">{{ product.category.name }}</span>
-                {% endif %}
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title text-truncate">{{ product.name }}</h5>
+                <p class="card-text small text-muted">{{ product.shop.shop_name }}</p>
                 
-                {% if product.size %}
-                <span class="badge bg-info">{{ product.size }}</span>
-                {% endif %}
-                
-                {% if product.color %}
-                <span class="badge bg-light text-dark border">{{ product.color }}</span>
-                {% endif %}
-            </div>
-            
-            <p class="card-text text-muted small mb-2 flex-grow-1">
-                {{ product.description|truncatechars:80 }}
-            </p>
-            
-            <!-- قیمت و دکمه خرید -->
-            <div class="mt-auto">
-                <div class="d-flex justify-content-between align-items-center">
-                    <span class="fw-bold text-success">
-                        {{ product.get_price_in_toman|floatformat:0|floatformat:0 }} تومان
-                    </span>
+                <div class="mt-auto d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-primary">{{ product.price|intcomma }} ریال</span>
                     
-                    {% if product.stock > 0 %}
-                    <button class="btn btn-sm btn-primary"
-                            hx-post="/api/cart/add/{{ product.id }}/"
-                            hx-target="#cart-container"
-                            hx-swap="innerHTML">
-                        <i class="bi bi-cart-plus"></i>
-                    </button>
+                    {% if product.is_in_stock %}
+                    <a href="{% url 'product-detail' product.shop.slug product.id %}" class="btn btn-sm btn-outline-primary">
+                        مشاهده و خرید
+                    </a>
                     {% else %}
-                    <button class="btn btn-sm btn-outline-secondary" disabled>
-                        ناموجود
-                    </button>
+                    <span class="badge bg-secondary">ناموجود</span>
                     {% endif %}
                 </div>
-                
-                <!-- دکمه مشاهده جزئیات -->
-                <div class="text-center mt-2">
-                    <a href="/shop/{{ shop.slug }}/product/{{ product.id }}/" 
-                       class="btn btn-sm btn-outline-primary w-100">
-                        <i class="bi bi-eye"></i> مشاهده
-                    </a>
-                </div>
             </div>
         </div>
     </div>
-</div>
-{% empty %}
-<div class="col-12 text-center py-5">
-    <div class="text-muted">
-        <i class="bi bi-inbox fs-1"></i>
-        <p class="mt-3">محصولی یافت نشد</p>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+        <p class="text-muted">محصولی یافت نشد.</p>
     </div>
+    {% endfor %}
 </div>
-{% endfor %}
+
+{% if page_obj.has_next %}
+<div class="text-center mt-4" id="load-more-container">
+    <button class="btn btn-outline-secondary" 
+            hx-get="{% url 'load-more' view.kwargs.shop_slug %}?page={{ page_obj.next_page_number }}"
+            hx-target="#product-list" 
+            hx-swap="beforeend"
+            hx-select=".col"
+            onclick="this.remove()">
+        نمایش بیشتر
+    </button>
+</div>
+{% endif %}

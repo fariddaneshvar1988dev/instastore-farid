@@ -1,145 +1,92 @@
 {% extends 'base.html' %}
 
-{% block title %}ثبت‌نام فروشگاه اینستاگرامی - InstaStore{% endblock %}
+{% block title %}ثبت‌نام فروشگاه - InstaStore{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow">
-            <div class="card-body p-4">
-                <h3 class="card-title text-center mb-4 text-primary">
-                    <i class="bi bi-shop"></i> ثبت‌نام فروشگاه جدید
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow border-0 rounded-4">
+            <div class="card-body p-5">
+                <h3 class="card-title text-center mb-4 fw-bold text-primary">
+                    <i class="bi bi-shop"></i> ساخت فروشگاه جدید
                 </h3>
                 
-                <form method="POST" action="/api/sellers/register/" id="register-form">
+                <form method="POST" action="{% url 'register-page' %}">
                     {% csrf_token %}
+                    
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                            لطفاً خطاهای فرم را بررسی کنید.
+                        </div>
+                    {% endif %}
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">نام کاربری *</label>
-                            <input type="text" name="username" class="form-control" 
-                                   placeholder="برای ورود به پنل" required>
-                            <div class="form-text">حداقل ۳ کاراکتر</div>
+                            <label class="form-label">نام کاربری (انگلیسی)</label>
+                            {{ form.username }}
+                            <div class="text-danger small">{{ form.username.errors }}</div>
                         </div>
-                        
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">رمز عبور *</label>
-                            <input type="password" name="password" class="form-control" 
-                                   placeholder="حداقل ۸ کاراکتر" required>
+                            <label class="form-label">ایمیل</label>
+                            {{ form.email }}
+                            <div class="text-danger small">{{ form.email.errors }}</div>
                         </div>
                     </div>
-                    
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">نام فروشگاه (فارسی)</label>
+                            {{ form.shop_name }}
+                            <div class="text-danger small">{{ form.shop_name.errors }}</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">آدرس انگلیسی فروشگاه</label>
+                            {{ form.shop_slug }}
+                            <div class="text-muted small" style="font-size: 0.75rem">فقط حروف انگلیسی و عدد</div>
+                            <div class="text-danger small">{{ form.shop_slug.errors }}</div>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
-                        <label class="form-label">نام کاربری اینستاگرام *</label>
-                        <div class="input-group">
+                        <label class="form-label">آیدی اینستاگرام (انگلیسی)</label>
+                        <div class="input-group" dir="ltr">
                             <span class="input-group-text">@</span>
-                            <input type="text" name="instagram_username" class="form-control" 
-                                   placeholder="jadeh_poshak" required>
+                            {{ form.instagram_username }}
                         </div>
-                        <div class="form-text">بدون @ وارد کنید</div>
+                        <div class="text-danger small">{{ form.instagram_username.errors }}</div>
+                    </div>
+
+                    <div class="alert alert-light border">
+                        <div class="row">
+                            <div class="col-md-12">
+                                {% for field in form %}
+                                    {% if "pass" in field.name %}
+                                        <div class="mb-3">
+                                            <label class="form-label">{{ field.label }}</label>
+                                            <input type="password" name="{{ field.name }}" class="form-control" dir="ltr" required>
+                                            <div class="text-danger small">{{ field.errors }}</div>
+                                            {% if field.help_text %}
+                                                <small class="text-muted d-block">{{ field.help_text|safe }}</small>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
                     </div>
                     
-                    <div class="mb-3">
-                        <label class="form-label">نام فروشگاه *</label>
-                        <input type="text" name="shop_name" class="form-control" 
-                               placeholder="مثال: جادۀ پوشاک" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">شماره تماس *</label>
-                        <input type="tel" name="phone_number" class="form-control" 
-                               placeholder="09123456789" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">ایمیل (اختیاری)</label>
-                        <input type="email" name="email" class="form-control" 
-                               placeholder="shop@example.com">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">درباره فروشگاه</label>
-                        <textarea name="bio" class="form-control" rows="3" 
-                                  placeholder="توضیح کوتاهی درباره فروشگاه خود بنویسید..."></textarea>
-                    </div>
-                    
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-check-circle"></i> ثبت‌نام و ایجاد فروشگاه
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg fw-bold">
+                            ثبت‌نام و ورود به داشبورد
                         </button>
                     </div>
                 </form>
                 
-                <div class="mt-4 text-center">
-                    <p class="text-muted mb-2">
-                        با ثبت‌نام موافقت می‌کنید با 
-                        <a href="/terms/" class="text-decoration-none">قوانین و مقررات</a>
-                    </p>
-                    <p class="mb-0">
-                        قبلاً ثبت‌نام کرده‌اید؟ 
-                        <a href="/login/" class="text-decoration-none">ورود به پنل</a>
-                    </p>
+                <div class="text-center mt-3">
+                    <a href="{% url 'login' %}" class="text-decoration-none">قبلاً ثبت‌نام کرده‌اید؟ ورود</a>
                 </div>
-            </div>
-        </div>
-        
-        <!-- مزایای ثبت‌نام -->
-        <div class="card mt-4 border-success">
-            <div class="card-body">
-                <h5 class="card-title text-success">
-                    <i class="bi bi-gift"></i> مزایای فروشگاه InstaStore
-                </h5>
-                <ul class="list-unstyled">
-                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> رایگان برای همیشه</li>
-                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> لینک اختصاصی فروشگاه</li>
-                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> پنل مدیریت ساده</li>
-                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> بدون نیاز به کدنویسی</li>
-                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> پشتیبانی ۲۴ ساعته</li>
-                </ul>
             </div>
         </div>
     </div>
 </div>
-
-<script>
-document.getElementById('register-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    // تبدیل instagram_username به فرمت صحیح
-    const instagramInput = this.querySelector('[name="instagram_username"]');
-    if (instagramInput.value && !instagramInput.value.startsWith('@')) {
-        instagramInput.value = '@' + instagramInput.value;
-    }
-    
-    // ارسال فرم
-    const formData = new FormData(this);
-    const data = Object.fromEntries(formData);
-    
-    fetch(this.action, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': data.csrfmiddlewaretoken
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(result => {
-        if (result.shop && result.shop.shop_url) {
-            alert('✅ فروشگاه شما با موفقیت ایجاد شد!\n' +
-                  '🔗 آدرس فروشگاه: ' + result.shop.shop_url);
-            window.location.href = result.shop.shop_url;
-        } else if (result.errors) {
-            let errorMsg = 'خطا در ثبت‌نام:\n';
-            for (const [key, value] of Object.entries(result.errors)) {
-                errorMsg += `• ${value}\n`;
-            }
-            alert(errorMsg);
-        }
-    })
-    .catch(error => {
-        alert('خطا در ارتباط با سرور');
-    });
-});
-</script>
 {% endblock %}

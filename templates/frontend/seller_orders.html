@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}مدیریت سفارشات{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3"><i class="bi bi-cart-check"></i> مدیریت سفارشات</h1>
+        
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                فیلتر: {{ status_filter|default:"همه" }}
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="?status=all">همه</a></li>
+                <li><a class="dropdown-item" href="?status=pending">در انتظار</a></li>
+                <li><a class="dropdown-item" href="?status=processing">در حال پردازش</a></li>
+                <li><a class="dropdown-item" href="?status=shipped">ارسال شده</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card bg-warning bg-opacity-10 border-warning">
+                <div class="card-body text-center">
+                    <h3 class="text-warning">{{ order_stats.pending }}</h3>
+                    <small>در انتظار تایید</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card bg-info bg-opacity-10 border-info">
+                <div class="card-body text-center">
+                    <h3 class="text-info">{{ order_stats.confirmed }}</h3>
+                    <small>تایید شده</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card bg-primary bg-opacity-10 border-primary">
+                <div class="card-body text-center">
+                    <h3 class="text-primary">{{ order_stats.shipped }}</h3>
+                    <small>ارسال شده</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card bg-success bg-opacity-10 border-success">
+                <div class="card-body text-center">
+                    <h3 class="text-success">{{ order_stats.delivered }}</h3>
+                    <small>تحویل شده</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-3">شماره سفارش</th>
+                            <th>مشتری</th>
+                            <th>مبلغ کل</th>
+                            <th>وضعیت</th>
+                            <th>تاریخ</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td class="ps-3 fw-bold">{{ order.order_id }}</td>
+                            <td>
+                                {{ order.customer_name }}
+                                <br>
+                                <small class="text-muted">{{ order.customer_phone }}</small>
+                            </td>
+                            <td>{{ order.total_amount|intcomma }} تومان</td>
+                            <td>
+                                <span class="badge 
+                                    {% if order.status == 'pending' %}bg-warning
+                                    {% elif order.status == 'cancelled' %}bg-danger
+                                    {% elif order.status == 'delivered' %}bg-success
+                                    {% else %}bg-info{% endif %}">
+                                    {{ order.get_status_display_fa }}
+                                </span>
+                            </td>
+                            <td>{{ order.created_at|date:"Y/m/d H:i" }}</td>
+                            <td>
+                                <a href="{% url 'seller-order-detail' order.id %}" class="btn btn-sm btn-primary">
+                                    مدیریت
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <p class="text-muted">سفارشی یافت نشد.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

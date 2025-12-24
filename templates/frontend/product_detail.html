@@ -1,82 +1,93 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
-{% block title %}{{ product.name }} - {{ shop.shop_name }}{% endblock %}
+{% block title %}{{ product.name }} | {{ product.shop.shop_name }}{% endblock %}
 
 {% block content %}
-<div class="row">
-    <!-- تصویر محصول -->
-    <div class="col-md-6">
-        <div class="card">
-            <img src="https://via.placeholder.com/500x500?text=Product+Image" 
-                 class="card-img-top" 
-                 alt="{{ product.name }}">
-        </div>
-    </div>
-    
-    <!-- اطلاعات محصول -->
-    <div class="col-md-6">
-        <h1>{{ product.name }}</h1>
-        <p class="text-muted">{{ shop.shop_name }}</p>
-        
-        <div class="mb-3">
-            <span class="badge bg-primary">{{ product.category.name }}</span>
-            {% if product.size %}
-            <span class="badge bg-secondary">{{ product.size }}</span>
-            {% endif %}
-            {% if product.color %}
-            <span class="badge bg-info">{{ product.color }}</span>
-            {% endif %}
-        </div>
-        
-        <div class="mb-3">
-            <h3 class="text-success">{{ product.get_price_in_toman|floatformat:0|floatformat:0 }} تومان</h3>
-        </div>
-        
-        <div class="mb-4">
-            <h5>توضیحات محصول:</h5>
-            <p>{{ product.description }}</p>
-        </div>
-        
-        {% if product.stock > 0 %}
-        <div class="d-grid gap-2">
-            <button class="btn btn-primary btn-lg">
-                <i class="bi bi-cart-plus"></i> افزودن به سبد خرید
-            </button>
-            <button class="btn btn-outline-secondary">
-                <i class="bi bi-whatsapp"></i> خرید از طریق واتس‌اپ
-            </button>
-        </div>
-        {% else %}
-        <div class="alert alert-warning">
-            <i class="bi bi-exclamation-triangle"></i> این محصول در حال حاضر ناموجود است
-        </div>
-        {% endif %}
-    </div>
-</div>
+<div class="container py-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">خانه</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'shop-store' product.shop.slug %}">{{ product.shop.shop_name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ product.name }}</li>
+        </ol>
+    </nav>
 
-<!-- محصولات مرتبط -->
-{% if related_products %}
-<div class="mt-5">
-    <h4>محصولات مرتبط</h4>
-    <div class="row">
-        {% for related in related_products %}
-        <div class="col-md-3">
-            <div class="card">
-                <img src="https://via.placeholder.com/300x200?text=Related" 
-                     class="card-img-top" 
-                     alt="{{ related.name }}">
+    <div class="row g-5">
+        <div class="col-md-6">
+            <div class="card border-0">
+                {% if product.images %}
+                <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner rounded">
+                        {% for image in product.images %}
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                            <img src="{{ image }}" class="d-block w-100" alt="{{ product.name }}" style="max-height: 500px; object-fit: contain;">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if product.images|length > 1 %}
+                    <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon bg-dark rounded-circle" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon bg-dark rounded-circle" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 400px;">
+                    <span class="text-muted fs-4">بدون تصویر</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <h1 class="mb-3">{{ product.name }}</h1>
+            
+            <div class="mb-4">
+                <span class="h3 fw-bold text-primary ms-2">{{ product.price|intcomma }} ریال</span>
+                <span class="text-muted">({{ product.get_price_in_toman|intcomma }} تومان)</span>
+            </div>
+
+            <div class="mb-4">
+                <h5>مشخصات:</h5>
+                <ul class="list-unstyled">
+                    {% if product.brand %}<li><strong>برند:</strong> {{ product.brand }}</li>{% endif %}
+                    {% if product.size %}<li><strong>سایز:</strong> {{ product.size }}</li>{% endif %}
+                    {% if product.color %}<li><strong>رنگ:</strong> {{ product.color }}</li>{% endif %}
+                    {% if product.material %}<li><strong>جنس:</strong> {{ product.material }}</li>{% endif %}
+                    <li><strong>فروشگاه:</strong> <a href="{% url 'shop-store' product.shop.slug %}">{{ product.shop.shop_name }}</a></li>
+                </ul>
+            </div>
+
+            <div class="mb-4">
+                <h5>توضیحات:</h5>
+                <p class="text-muted">{{ product.description|linebreaks }}</p>
+            </div>
+
+            <div class="card bg-light border-0">
                 <div class="card-body">
-                    <h6>{{ related.name }}</h6>
-                    <p class="text-success">{{ related.get_price_in_toman|floatformat:0|floatformat:0 }} تومان</p>
-                    <a href="/shop/{{ shop.slug }}/product/{{ related.id }}/" 
-                       class="btn btn-sm btn-outline-primary w-100">
-                        مشاهده
-                    </a>
+                    {% if product.is_in_stock %}
+                    <form method="post" action="" class="row g-3 align-items-end">
+                        {% csrf_token %}
+                        <div class="col-4">
+                            <label for="quantity" class="form-label">تعداد</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1" max="{{ product.stock }}">
+                        </div>
+                        <div class="col-8">
+                            <button type="submit" class="btn btn-primary w-100">افزودن به سبد خرید</button>
+                        </div>
+                    </form>
+                    <small class="text-muted mt-2 d-block">موجودی در انبار: {{ product.stock }} عدد</small>
+                    {% else %}
+                    <button class="btn btn-secondary w-100" disabled>ناموجود</button>
+                    {% endif %}
                 </div>
             </div>
         </div>
-        {% endfor %}
     </div>
 </div>
-{% endif %}
 {% endblock %}

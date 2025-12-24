@@ -1,23 +1,11 @@
-<!-- سبد خرید -->
-<a href="/cart/" class="btn btn-outline-light position-relative" 
-   hx-boost="true"
-   onclick="if(window.innerWidth < 768) openCart();">
-    
-    <i class="bi bi-cart3"></i>
-    
-    <!-- نمایش تعداد آیتم‌ها -->
-    {% if cart_items_count and cart_items_count > 0 %}
-    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger cart-badge">
-        {{ cart_items_count }}
-        <span class="visually-hidden">آیتم‌های سبد خرید</span>
-    </span>
-    {% else %}
-    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger cart-badge" 
-          style="display: none;">
-        0
+{% load humanize %}
+
+<a href="" class="btn btn-outline-dark position-relative">
+    <i class="bi bi-cart-fill"></i> سبد خرید
+    {% if cart_count > 0 %}
+    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+        {{ cart_count }}
+        <span class="visually-hidden">آیتم</span>
     </span>
     {% endif %}
-    
-    <!-- متن فقط در دسکتاپ -->
-    <span class="d-none d-md-inline"> سبد خرید</span>
 </a>

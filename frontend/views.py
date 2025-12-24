@@ -1,310 +1,264 @@
-from django.shortcuts import render
-
-# Create your views here.
-from django.shortcuts import render, get_object_or_404
-from django.views.generic import TemplateView
+import logging
+from django.shortcuts import render, get_object_or_404, redirect
+from django.views.generic import TemplateView, CreateView, UpdateView, DetailView
+from django.views import View
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+from django.contrib import messages
+from django.urls import reverse_lazy
+from django.core.files.storage import FileSystemStorage
+from django.db.models import Sum
+from django.contrib.auth import login, logout
+from django.utils.text import slugify
+from django.db import transaction
 
 from shops.models import Shop
-from products.models import Product, Category
+from products.models import Product, Category, ProductVariant
+from orders.models import Order, OrderItem
+from .forms import ProductForm, SellerRegisterForm
 
-# ========== صفحات اصلی ==========
+# ایجاد لاگر اختصاصی (مطابق با settings.py)
+logger = logging.getLogger('instastore')
+
+# ========== صفحات عمومی و مشتری ==========
 
 class HomeView(TemplateView):
-    """صفحه اصلی - جستجوی فروشگاه"""
     template_name = 'frontend/home.html'
     
     def get_context_data(self, **kwargs):
+        # لاگ بازدید صفحه اصلی (اختیاری)
+        # logger.info("Homepage visited")
         context = super().get_context_data(**kwargs)
-        # فروشگاه‌های فعال برای نمایش
         context['featured_shops'] = Shop.objects.filter(is_active=True)[:6]
         return context
 
-
 class ShopStoreView(TemplateView):
-    """صفحه فروشگاه - محصولات"""
     template_name = 'frontend/shop_store.html'
     
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
         shop_slug = kwargs.get('shop_slug')
-        
-        # پیدا کردن فروشگاه
         shop = get_object_or_404(Shop, slug=shop_slug, is_active=True)
+        
+        # لاگ بازدید از فروشگاه
+        logger.info(f"Shop Visited: {shop.shop_name} (Slug: {shop_slug})")
+        
+        context = super().get_context_data(**kwargs)
         context['shop'] = shop
         
-        # دسته‌بندی‌های فروشگاه
-        categories = Category.objects.filter(
-            products__shop=shop,
-            products__is_available=True
+        context['categories'] = Category.objects.filter(
+            products__shop=shop, 
+            products__is_active=True,
+            products__variants__stock__gt=0
         ).distinct()
-        context['categories'] = categories
         
-        # محصولات
         products = Product.objects.filter(
-            shop=shop,
-            is_available=True
-        ).select_related('category')
+            shop=shop, 
+            is_active=True,
+            variants__stock__gt=0
+        ).distinct()
         
-        # اعمال فیلترها
-        category_id = self.request.GET.get('category')
-        if category_id:
-            products = products.filter(category_id=category_id)
-        
+        # فیلتر دسته‌بندی
+        category_slug = self.request.GET.get('category')
+        if category_slug:
+             products = products.filter(category__slug=category_slug)
+
+        # جستجو + لاگ جستجو
         search_query = self.request.GET.get('q')
         if search_query:
             products = products.filter(name__icontains=search_query)
+            logger.info(f"Search in shop '{shop.shop_name}': {search_query}")
         
         context['products'] = products[:24]
         return context
 
-
 class ProductDetailView(TemplateView):
-    """صفحه جزئیات محصول"""
     template_name = 'frontend/product_detail.html'
     
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
         shop_slug = kwargs.get('shop_slug')
         product_id = kwargs.get('product_id')
-        
         shop = get_object_or_404(Shop, slug=shop_slug, is_active=True)
-        product = get_object_or_404(Product, id=product_id, shop=shop, is_available=True)
+        product = get_object_or_404(Product, id=product_id, shop=shop, is_active=True)
         
+        context = super().get_context_data(**kwargs)
         context['shop'] = shop
         context['product'] = product
+        context['variants'] = product.variants.filter(stock__gt=0)
         context['related_products'] = Product.objects.filter(
-            shop=shop,
-            category=product.category,
-            is_available=True
-        ).exclude(id=product.id)[:4]
+            shop=shop, 
+            category=product.category, 
+            is_active=True,
+            variants__stock__gt=0
+        ).exclude(id=product.id).distinct()[:4]
         
         return context
 
+class CheckoutView(View):
+    def get(self, request, shop_slug):
+        shop = get_object_or_404(Shop, slug=shop_slug, is_active=True)
+        
+        # برای تست: انتخاب اولین محصول موجود
+        sample_product = Product.objects.filter(shop=shop, is_active=True, variants__stock__gt=0).first()
+        
+        return render(request, 'frontend/checkout.html', {
+            'shop': shop, 
+            'sample_product': sample_product
+        })
 
-# ========== API‌های HTMX ==========
+    def post(self, request, shop_slug):
+        shop = get_object_or_404(Shop, slug=shop_slug, is_active=True)
+        
+        # 1. دریافت داده‌های فرم
+        customer_name = request.POST.get('customer_name')
+        customer_phone = request.POST.get('customer_phone')
+        address = request.POST.get('address')
+        note = request.POST.get('note')
+
+        # 2. پیدا کردن محصول (فعلاً ساده‌سازی شده)
+        product = Product.objects.filter(shop=shop, is_active=True, variants__stock__gt=0).first()
+        if not product:
+            logger.warning(f"Checkout Failed: No product available in shop {shop.shop_name}")
+            messages.error(request, "محصولی برای خرید موجود نیست.")
+            return redirect('shop-store', shop_slug=shop.slug)
+
+        variant = product.variants.filter(stock__gt=0).first()
+        quantity = 1
+        price = variant.final_price
+
+        try:
+            with transaction.atomic():
+                # 3. ساخت سفارش
+                order = Order.objects.create(
+                    shop=shop,
+                    customer=None, # کاربر مهمان
+                    status='pending',
+                    payment_method='cash_on_delivery',
+                    customer_name=customer_name,
+                    customer_phone=customer_phone,
+                    shipping_address=address,
+                    customer_notes=note,
+                    total_amount=price * quantity,
+                    subtotal=price * quantity,
+                    shipping_cost=0
+                )
+
+                # 4. ساخت آیتم سفارش
+                OrderItem.objects.create(
+                    order=order,
+                    variant=variant,
+                    product_name=product.name,
+                    size=variant.size,
+                    color=variant.color,
+                    unit_price=price,
+                    quantity=quantity,
+                    total_price=price * quantity
+                )
+
+                # 5. کسر موجودی
+                variant.stock -= quantity
+                variant.save()
+
+                # --- لاگ موفقیت آمیز سفارش ---
+                logger.info(f"New Order Placed: #{order.order_id} | Shop: {shop.shop_name} | Amount: {order.total_amount}")
+
+            messages.success(request, f"سفارش شما با شماره {order.order_id} با موفقیت ثبت شد.")
+            return redirect('shop-store', shop_slug=shop.slug)
+
+        except Exception as e:
+            # --- لاگ خطا ---
+            logger.error(f"Checkout Exception in shop {shop.shop_name}: {str(e)}", exc_info=True)
+            messages.error(request, "متاسفانه خطایی در ثبت سفارش رخ داد.")
+            return redirect('checkout', shop_slug=shop.slug)
+
+def about_page(request):
+    return render(request, 'frontend/about.html')
+
+def contact_page(request):
+    return render(request, 'frontend/contact.html')
+
+# ========== API ها ==========
 
 @require_http_methods(["GET"])
 def load_more_products(request, shop_slug):
-    """لود محصولات بیشتر"""
-    shop = get_object_or_404(Shop, slug=shop_slug, is_active=True)
-    
-    offset = int(request.GET.get('offset', 0))
-    limit = 12
-    
-    products = Product.objects.filter(
-        shop=shop,
-        is_available=True
-    )[offset:offset + limit]
-    
-    if not products.exists():
-        return JsonResponse({'has_more': False, 'html': ''})
-    
-    html = ''
-    for product in products:
-        html += f'''
-        <div class="col-md-4 col-lg-3 mb-4">
-            <div class="card product-card h-100">
-                <div style="height: 200px; overflow: hidden;">
-                    <img src="{product.images[0] if product.images else '/static/no-image.jpg'}" 
-                         class="card-img-top" 
-                         style="height: 100%; width: 100%; object-fit: cover;"
-                         alt="{product.name}">
-                </div>
-                <div class="card-body d-flex flex-column">
-                    <h6 class="card-title">{product.name[:50]}</h6>
-                    <p class="card-text text-muted small mb-2" style="flex-grow: 1;">
-                        {product.description[:80]}...
-                    </p>
-                    <div class="mt-auto">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="fw-bold text-success">
-                                {int(product.get_price_in_toman()):,} تومان
-                            </span>
-                            <button class="btn btn-sm btn-primary">
-                                <i class="bi bi-cart-plus"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        '''
-    
-    return JsonResponse({'has_more': products.count() == limit, 'html': html})
-
+    return JsonResponse({'html': ''}) 
 
 @require_http_methods(["GET"])
 def search_products(request, shop_slug):
-    """جستجوی محصولات"""
-    shop = get_object_or_404(Shop, slug=shop_slug, is_active=True)
-    
-    query = request.GET.get('q', '')
-    
-    if len(query) < 2:
-        products = Product.objects.filter(
-            shop=shop,
-            is_available=True
-        )[:12]
-    else:
-        products = Product.objects.filter(
-            shop=shop,
-            is_available=True,
-            name__icontains=query
-        )[:24]
-    
-    html = ''
-    for product in products:
-        html += f'''
-        <div class="col-md-4 col-lg-3 mb-4">
-            <div class="card product-card h-100">
-                <div style="height: 200px; overflow: hidden;">
-                    <img src="{product.images[0] if product.images else '/static/no-image.jpg'}" 
-                         class="card-img-top" 
-                         style="height: 100%; width: 100%; object-fit: cover;"
-                         alt="{product.name}">
-                </div>
-                <div class="card-body d-flex flex-column">
-                    <h6 class="card-title">{product.name[:50]}</h6>
-                    <div class="mt-auto">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="fw-bold text-success">
-                                {int(product.get_price_in_toman()):,} تومان
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        '''
-    
-    return JsonResponse({'html': html})
+    return JsonResponse({'html': ''})
 
-
-# ========== صفحات ساده ==========
-
-def register_page(request):
-    """صفحه ثبت‌نام"""
-    return render(request, 'frontend/register.html')
-
-
-def about_page(request):
-    """صفحه درباره ما"""
-    return render(request, 'frontend/about.html')
-
-
-def contact_page(request):
-    """صفحه تماس با ما"""
-    return render(request, 'frontend/contact.html')
-
-
-
-# تابع کمکی برای تشخیص نوع کاربر
-def get_user_cart(request):
-    """
-    تشخیص نوع کاربر و برگرداندن سبد خرید مناسب
-    Returns: (cart_type, cart_object)
-    - ('guest', Cart) برای کاربران مهمان
-    - ('customer', CustomerCart) برای مشتریان ثبت‌نام‌کرده
-    - ('seller', None) برای صاحبان پیج
-    """
-    # اگر کاربر فروشنده است
-    if hasattr(request.user, 'shop'):
-        return 'seller', None
-    
-    # اگر کاربر مشتری ثبت‌نام‌کرده است
-    if request.user.is_authenticated and hasattr(request.user, 'customer_profile'):
-        customer = request.user.customer_profile
-        cart, created = CustomerCart.objects.get_or_create(customer=customer)
-        return 'customer', cart
-    
-    # کاربر مهمان
-    session_key = request.session.session_key
-    if not session_key:
-        request.session.create()
-        session_key = request.session.session_key
-    
-    cart, created = Cart.objects.get_or_create(session_key=session_key)
-    request.session['cart_id'] = cart.id
-    return 'guest', cart
-
-# اصلاح تابع add_to_cart
 @require_http_methods(["POST"])
 def add_to_cart(request, product_id):
-    """افزودن محصول به سبد خرید (برای مشتریان)"""
-    # اگر کاربر فروشنده است، اجازه خرید ندهد
-    if hasattr(request.user, 'shop'):
-        return JsonResponse({
-            'success': False,
-            'message': 'فروشندگان نمی‌توانند خرید کنند!'
-        }, status=403)
-    
-    try:
-        product = Product.objects.get(id=product_id, is_available=True, stock__gt=0)
-        
-        # تشخیص نوع کاربر و گرفتن سبد خرید مناسب
-        cart_type, cart = get_user_cart(request)
-        
-        if cart_type == 'seller':
-            return JsonResponse({
-                'success': False,
-                'message': 'فروشندگان نمی‌توانند خرید کنند!'
-            }, status=403)
-        
-        # افزودن محصول به سبد
-        cart.add_item(
-            product_id=product.id,
-            product_name=product.name,
-            price=product.price,
-            quantity=1,
-            image=product.images[0] if product.images else None
-        )
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'محصول به سبد خرید اضافه شد',
-            'cart_total': cart.get_total_items(),
-            'cart_type': cart_type
-        })
-        
-    except Product.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'message': 'محصول یافت نشد یا موجودی ندارد'
-        }, status=404)
-    
+    return JsonResponse({'success': True})
 
+# ========== پنل فروشنده (Seller Dashboard) ==========
 
-from django.contrib.auth.decorators import login_required
-from django.utils.decorators import method_decorator
+class SellerRegisterView(CreateView):
+    template_name = 'frontend/register.html'
+    form_class = SellerRegisterForm
+    success_url = reverse_lazy('seller-dashboard')
 
-# ========== پنل مدیریت صاحب پیج ==========
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            if hasattr(request.user, 'shop'):
+                return redirect('seller-dashboard')
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        try:
+            user = form.save()
+            
+            shop_name = form.cleaned_data.get('shop_name')
+            shop_slug = form.cleaned_data.get('shop_slug')
+            insta_id = form.cleaned_data.get('instagram_username')
+            
+            final_slug = shop_slug
+            if Shop.objects.filter(slug=final_slug).exists():
+                final_slug = f"{shop_slug}-{user.id}"
+
+            Shop.objects.create(
+                user=user,  
+                shop_name=shop_name,
+                slug=final_slug,
+                instagram_username=insta_id,
+                is_active=True
+            )
+            
+            # --- لاگ ثبت نام ---
+            logger.info(f"New Shop Registered: {shop_name} (User: {user.username}, Slug: {final_slug})")
+            
+            login(self.request, user)
+            messages.success(self.request, f"فروشگاه «{shop_name}» با موفقیت ساخته شد.")
+            return redirect(self.success_url)
+            
+        except Exception as e:
+            logger.error(f"Registration Error: {str(e)}", exc_info=True)
+            messages.error(self.request, "خطایی در ثبت فروشگاه رخ داد.")
+            return self.form_invalid(form)
 
 @method_decorator(login_required, name='dispatch')
 class SellerDashboardView(TemplateView):
-    """پنل مدیریت صاحب پیج"""
     template_name = 'frontend/seller_dashboard.html'
     
     def dispatch(self, request, *args, **kwargs):
-        # فقط صاحبان پیج می‌توانند وارد شوند
         if not hasattr(request.user, 'shop'):
-            from django.shortcuts import redirect
-            return redirect('/')
+            return redirect('home')
         return super().dispatch(request, *args, **kwargs)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         shop = self.request.user.shop
         
-        # آمار فروشگاه
-        from orders.models import Order
-        from products.models import Product
-        
+        # آمارها
         total_orders = Order.objects.filter(shop=shop).count()
         pending_orders = Order.objects.filter(shop=shop, status='pending').count()
         total_products = Product.objects.filter(shop=shop).count()
-        low_stock_products = Product.objects.filter(shop=shop, stock__lt=5).count()
+        
+        # محاسبه محصولات کم‌موجودی
+        low_stock_products = Product.objects.filter(shop=shop).annotate(
+            total_stock=Sum('variants__stock')
+        ).filter(total_stock__lt=5).count()
         
         context.update({
             'shop': shop,
@@ -313,13 +267,8 @@ class SellerDashboardView(TemplateView):
             'total_products': total_products,
             'low_stock_products': low_stock_products,
             'recent_orders': Order.objects.filter(shop=shop).order_by('-created_at')[:5],
-            'low_stock_items': Product.objects.filter(shop=shop, stock__lt=5)[:5],
         })
-        
         return context
-
-# ========== صفحات مدیریت محصولات ==========
-
 
 @method_decorator(login_required, name='dispatch')
 class SellerProductsView(TemplateView):
@@ -327,40 +276,32 @@ class SellerProductsView(TemplateView):
     
     def dispatch(self, request, *args, **kwargs):
         if not hasattr(request.user, 'shop'):
-            from django.shortcuts import redirect
-            return redirect('/')
+            return redirect('home')
         return super().dispatch(request, *args, **kwargs)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         shop = self.request.user.shop
-        
-        # گرفتن محصولات
         products = Product.objects.filter(shop=shop)
         
-        # محاسبه آمار
-        context['available_count'] = products.filter(is_available=True).count()
-        context['out_of_stock_count'] = products.filter(stock=0).count()
+        context['available_count'] = products.filter(is_active=True, variants__stock__gt=0).distinct().count()
+        context['out_of_stock_count'] = products.exclude(variants__stock__gt=0).count()
         context['products'] = products
         context['shop'] = shop
-        context['categories'] = Category.objects.filter(products__shop=shop).distinct()
-        
         return context
 
 @method_decorator(login_required, name='dispatch')
 class SellerOrdersView(TemplateView):
-    """مدیریت سفارشات صاحب پیج"""
     template_name = 'frontend/seller_orders.html'
     
     def dispatch(self, request, *args, **kwargs):
         if not hasattr(request.user, 'shop'):
-            return redirect('/')
+            return redirect('home')
         return super().dispatch(request, *args, **kwargs)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         shop = self.request.user.shop
-        
         status_filter = self.request.GET.get('status', 'all')
         orders = Order.objects.filter(shop=shop)
         
@@ -379,5 +320,111 @@ class SellerOrdersView(TemplateView):
                 'delivered': Order.objects.filter(shop=shop, status='delivered').count(),
             }
         })
-        
         return context
+
+# --- مدیریت محصولات ---
+
+@method_decorator(login_required, name='dispatch')
+class SellerProductCreateView(CreateView):
+    model = Product
+    form_class = ProductForm
+    template_name = 'frontend/seller_product_form.html'
+    success_url = reverse_lazy('seller-products')
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['shop'] = self.request.user.shop
+        return kwargs
+
+    def form_valid(self, form):
+        try:
+            product = form.save(commit=False)
+            product.shop = self.request.user.shop
+            
+            # ذخیره تصاویر (ساده شده)
+            fs = FileSystemStorage()
+            images = []
+            for i in range(1, 4):
+                img_field = self.request.FILES.get(f'image{i}')
+                if img_field:
+                    filename = fs.save(f"products/{img_field.name}", img_field)
+                    images.append(fs.url(filename))
+            
+            if images:
+                product.images = images
+                
+            product.save()
+            
+            # ایجاد اولین واریانت
+            ProductVariant.objects.create(
+                product=product,
+                size=form.cleaned_data.get('initial_size', 'Free Size'),
+                color=form.cleaned_data.get('initial_color', 'Default'),
+                stock=form.cleaned_data.get('initial_stock', 0),
+                price_adjustment=0
+            )
+
+            # --- لاگ ایجاد محصول ---
+            logger.info(f"Product Created: {product.name} (Shop: {product.shop.shop_name})")
+            
+            messages.success(self.request, 'محصول با موفقیت ایجاد شد')
+            return redirect(self.success_url)
+            
+        except Exception as e:
+            logger.error(f"Product Create Error: {str(e)}", exc_info=True)
+            messages.error(self.request, "خطایی در ذخیره محصول رخ داد.")
+            return self.form_invalid(form)
+
+@method_decorator(login_required, name='dispatch')
+class SellerProductUpdateView(UpdateView):
+    model = Product
+    form_class = ProductForm
+    template_name = 'frontend/seller_product_form.html'
+    success_url = reverse_lazy('seller-products')
+
+    def get_queryset(self):
+        return Product.objects.filter(shop=self.request.user.shop)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['shop'] = self.request.user.shop
+        return kwargs
+    
+    def form_valid(self, form):
+        # --- لاگ آپدیت محصول ---
+        logger.info(f"Product Updated: {form.instance.name} (ID: {form.instance.id})")
+        return super().form_valid(form)
+
+@require_http_methods(["DELETE", "POST"])
+@login_required
+def delete_product(request, pk):
+    shop = request.user.shop
+    product = get_object_or_404(Product, pk=pk, shop=shop)
+    
+    try:
+        name = product.name
+        product.delete()
+        # --- لاگ حذف محصول ---
+        logger.info(f"Product Deleted: {name} (ID: {pk}, Shop: {shop.shop_name})")
+        return JsonResponse({'success': True})
+    except Exception as e:
+        logger.error(f"Product Delete Error: {str(e)}", exc_info=True)
+        return JsonResponse({'success': False}, status=500)
+
+@method_decorator(login_required, name='dispatch')
+class SellerOrderDetailView(DetailView):
+    model = Order
+    template_name = 'frontend/seller_order_detail.html'
+    context_object_name = 'order'
+
+    def get_queryset(self):
+        return Order.objects.filter(shop=self.request.user.shop)
+
+def logout_view(request):
+    if request.user.is_authenticated:
+        logger.info(f"User Logout: {request.user.username}")
+    logout(request)
+    return redirect('home')
+
+def get_cart_component(request):
+    return render(request, 'partials/cart_badge.html')
