@@ -1,4 +1,5 @@
 import logging
+from .forms import ProductForm, SellerRegisterForm, ShopSettingsForm # <--- ShopSettingsForm را اضافه کنید
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import TemplateView, CreateView, UpdateView, DetailView
 from django.views import View
@@ -419,6 +420,22 @@ class SellerOrderDetailView(DetailView):
 
     def get_queryset(self):
         return Order.objects.filter(shop=self.request.user.shop)
+    
+
+@method_decorator(login_required, name='dispatch')
+class ShopSettingsView(UpdateView):
+    model = Shop
+    form_class = ShopSettingsForm
+    template_name = 'frontend/seller_settings.html'
+    success_url = reverse_lazy('seller-settings')
+
+    def get_object(self):
+        # این متد تضمین می‌کند هر کس فقط تنظیمات فروشگاه خودش را ببیند
+        return self.request.user.shop
+
+    def form_valid(self, form):
+        messages.success(self.request, "تنظیمات فروشگاه با موفقیت ذخیره شد.")
+        return super().form_valid(form)
 
 def logout_view(request):
     if request.user.is_authenticated:

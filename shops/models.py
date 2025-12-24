@@ -1,7 +1,4 @@
 from django.db import models
-
-# Create your models here.
-from django.db import models
 from django.contrib.auth.models import User
 from django.utils.text import slugify
 
@@ -17,7 +14,7 @@ class Shop(models.Model):
         verbose_name='کاربر'
     )
     
-    # اطلاعات فروشگاه
+    # === اطلاعات عمومی فروشگاه ===
     instagram_username = models.CharField(
         max_length=100,
         unique=True,
@@ -51,19 +48,57 @@ class Shop(models.Model):
         verbose_name='ایمیل'
     )
     
-    # آدرس فروشگاه
     address = models.TextField(
         blank=True,
         verbose_name='آدرس'
     )
     
-    # تنظیمات فروشگاه
+    # === تنظیمات پرداخت (بخش جدید) ===
+    
+    # 1. پرداخت در محل
+    enable_cod = models.BooleanField(
+        default=True, 
+        verbose_name="فعالسازی پرداخت در محل"
+    )
+
+    # 2. کارت به کارت
+    enable_card_to_card = models.BooleanField(
+        default=False, 
+        verbose_name="فعالسازی کارت به کارت"
+    )
+    card_owner_name = models.CharField(
+        max_length=100, 
+        blank=True, 
+        verbose_name="نام صاحب کارت"
+    )
+    card_number = models.CharField(
+        max_length=16, 
+        blank=True, 
+        verbose_name="شماره کارت"
+    )
+    shaba_number = models.CharField(
+        max_length=26, 
+        blank=True, 
+        verbose_name="شماره شبا (اختیاری)"
+    )
+
+    # 3. درگاه پرداخت (مثل زرین‌پال)
+    enable_online_payment = models.BooleanField(
+        default=False, 
+        verbose_name="فعالسازی درگاه آنلاین"
+    )
+    zarinpal_merchant_id = models.CharField(
+        max_length=36, 
+        blank=True, 
+        verbose_name="مرچنت کد زرین‌پال"
+    )
+    
+    # === وضعیت و تاریخ‌ها ===
     is_active = models.BooleanField(
         default=True,
         verbose_name='فعال'
     )
     
-    # تاریخ‌ها
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name='تاریخ ایجاد'
@@ -83,12 +118,7 @@ class Shop(models.Model):
         return f"{self.shop_name} (@{self.instagram_username})"
     
     def save(self, *args, **kwargs):
-        """اگر slug وجود نداشت، از instagram_username ساخته می‌شود"""
+        # اگر اسلاگ خالی بود، از روی نام فروشگاه بساز
         if not self.slug:
-            # ایجاد slug از نام کاربری اینستاگرام
-            self.slug = slugify(self.instagram_username)
+            self.slug = slugify(self.shop_name, allow_unicode=True)
         super().save(*args, **kwargs)
-    
-    def get_absolute_url(self):
-        """آدرس مطلق فروشگاه"""
-        return f"/shop/{self.slug}/"

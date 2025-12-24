@@ -4,9 +4,11 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
 from frontend import views
+from frontend.views import ShopSettingsView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('seller/settings/', ShopSettingsView.as_view(), name='seller-settings'),
     
     # --- احراز هویت (Auth) ---
     # این خط قبلاً نبود و باعث ارور 404 می‌شد

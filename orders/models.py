@@ -26,7 +26,14 @@ class Order(models.Model):
     
     order_id = models.CharField(max_length=20, unique=True, editable=False, verbose_name='شماره سفارش')
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE, related_name='orders', verbose_name='فروشگاه')
-    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True ,blank=True ,related_name='orders', verbose_name='مشتری')
+    customer = models.ForeignKey(
+        'customers.Customer', 
+        on_delete=models.PROTECT, 
+        related_name='orders', 
+        null=True,   # <--- این مهم است (اجازه خالی بودن در دیتابیس)
+        blank=True,  # <--- این مهم است (اجازه خالی بودن در فرم)
+        verbose_name='مشتری'
+    )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name='وضعیت')
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='cash_on_delivery', verbose_name='روش پرداخت')
     payment_status = models.BooleanField(default=False, verbose_name='وضعیت پرداخت')

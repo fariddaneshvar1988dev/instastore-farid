@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}تنظیمات فروشگاه{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold">⚙️ تنظیمات فروشگاه</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                            <div class="alert alert-danger">{{ form.errors }}</div>
+                        {% endif %}
+
+                        <ul class="nav nav-tabs mb-4" id="settingTabs" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#general" type="button">عمومی</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#payment" type="button">💳 روش‌های پرداخت</button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="settingTabsContent">
+                            <div class="tab-pane fade show active" id="general">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">نام فروشگاه</label>
+                                        {{ form.shop_name }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">آیدی اینستاگرام</label>
+                                        {{ form.instagram_username }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">شماره تماس</label>
+                                        {{ form.phone_number }}
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">بیوگرافی کوتاه</label>
+                                        {{ form.bio }}
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">آدرس فروشگاه</label>
+                                        {{ form.address }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="payment">
+                                
+                                <div class="card bg-light border-0 mb-3">
+                                    <div class="card-body">
+                                        <div class="form-check form-switch">
+                                            {{ form.enable_cod }}
+                                            <label class="form-check-label fw-bold">فعالسازی پرداخت در محل</label>
+                                        </div>
+                                        <small class="text-muted d-block mt-1">مشتری هزینه را هنگام تحویل کالا پرداخت می‌کند.</small>
+                                    </div>
+                                </div>
+
+                                <div class="card bg-light border-0 mb-3">
+                                    <div class="card-body">
+                                        <div class="form-check form-switch mb-3">
+                                            {{ form.enable_card_to_card }}
+                                            <label class="form-check-label fw-bold">فعالسازی پرداخت کارت به کارت</label>
+                                        </div>
+                                        <div class="row g-2">
+                                            <div class="col-md-6">
+                                                <label class="small text-muted">نام صاحب کارت</label>
+                                                {{ form.card_owner_name }}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="small text-muted">شماره کارت</label>
+                                                {{ form.card_number }}
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="small text-muted">شماره شبا (برای نمایش در فاکتور)</label>
+                                                {{ form.shaba_number }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card bg-light border-0 mb-3">
+                                    <div class="card-body">
+                                        <div class="form-check form-switch mb-3">
+                                            {{ form.enable_online_payment }}
+                                            <label class="form-check-label fw-bold">فعالسازی درگاه پرداخت آنلاین</label>
+                                        </div>
+                                        <div>
+                                            <label class="small text-muted">مرچنت کد زرین‌پال</label>
+                                            {{ form.zarinpal_merchant_id }}
+                                            <small class="text-muted d-block mt-1">کد ۳۶ رقمی که از پنل زرین‌پال دریافت کرده‌اید.</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        <button type="submit" class="btn btn-primary w-100 py-2">ذخیره تغییرات</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

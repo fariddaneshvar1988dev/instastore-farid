@@ -159,3 +159,49 @@ class SellerRegisterForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = User
         fields = ('username', 'email', 'shop_name', 'shop_slug', 'instagram_username')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# در انتهای فایل instastore/frontend/forms.py اضافه کنید:
+
+from shops.models import Shop  # اگر ایمپورت نشده، اضافه کنید
+
+class ShopSettingsForm(forms.ModelForm):
+    class Meta:
+        model = Shop
+        fields = [
+            # اطلاعات عمومی
+            'shop_name', 'instagram_username', 'bio', 'phone_number', 'address',
+            # تنظیمات پرداخت
+            'enable_cod', 
+            'enable_card_to_card', 'card_owner_name', 'card_number', 'shaba_number',
+            'enable_online_payment', 'zarinpal_merchant_id'
+        ]
+        widgets = {
+            'shop_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'instagram_username': forms.TextInput(attrs={'class': 'form-control', 'dir': 'ltr'}),
+            'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            
+            'enable_cod': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            
+            'enable_card_to_card': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'card_owner_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'مثال: علی رضایی'}),
+            'card_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '۱۶ رقم روی کارت'}),
+            'shaba_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'IR...'}),
+            
+            'enable_online_payment': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'zarinpal_merchant_id': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'کد ۳۶ رقمی زرین‌پال'}),
+        }        

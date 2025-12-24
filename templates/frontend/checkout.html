@@ -1,112 +1,87 @@
 {% extends 'base.html' %}
 {% load humanize %}
 
-{% block title %}تسویه حساب - {{ shop.shop_name }}{% endblock %}
+{% block title %}تسویه حساب | {{ shop.shop_name }}{% endblock %}
 
 {% block content %}
 <div class="container py-5">
     <div class="row">
-        <div class="col-md-8">
-            <div class="card shadow-sm border-0 rounded-4 mb-4">
-                <div class="card-header bg-white py-3">
-                    <h5 class="mb-0 fw-bold">سبد خرید شما از «{{ shop.shop_name }}»</h5>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-info d-flex align-items-center">
-                        <i class="bi bi-info-circle-fill fs-4 me-2"></i>
-                        <div>
-                            سیستم سبد خرید در حال تکمیل است. در حال حاضر می‌توانید سفارش خود را نهایی کنید.
-                        </div>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table class="table align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>محصول</th>
-                                    <th>قیمت واحد</th>
-                                    <th>تعداد</th>
-                                    <th>مجموع</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="bg-light rounded p-2 me-2" style="width: 50px; height: 50px;">
-                                                <i class="bi bi-image text-muted"></i>
-                                            </div>
-                                            <div>
-                                                <span class="fw-bold d-block">محصول نمونه</span>
-                                                <span class="text-muted small">رنگ: مشکی | سایز: L</span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>250,000 تومان</td>
-                                    <td>1</td>
-                                    <td>250,000 تومان</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
+        <div class="col-md-7">
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-header bg-white py-3">
-                    <h5 class="mb-0 fw-bold">اطلاعات ارسال</h5>
+                    <h5 class="mb-0 fw-bold">📍 اطلاعات ارسال</h5>
                 </div>
-                <div class="card-body">
-                    <form id="checkout-form" method="post">
+                <div class="card-body p-4">
+                    <form method="POST" id="checkout-form">
+                        {% csrf_token %}
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} small">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label">نام و نام خانوادگی</label>
-                                <input type="text" class="form-control" required>
+                                <label class="form-label">نام و نام خانوادگی *</label>
+                                <input type="text" name="customer_name" class="form-control" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">شماره موبایل</label>
-                                <input type="tel"  name="custumer_phone" class="form-control" required>
+                                <label class="form-label">شماره موبایل *</label>
+                                <input type="tel" name="customer_phone" class="form-control" placeholder="09xxxxxxxxx" required>
                             </div>
                             <div class="col-12">
-                                <label class="form-label">آدرس دقیق پستی</label>
-                                <textarea class="form-control" rows="3" required></textarea>
+                                <label class="form-label">آدرس دقیق پستی *</label>
+                                <textarea name="address" class="form-control" rows="3" required></textarea>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">کد پستی</label>
-                                <input type="text" class="form-control">
+                            <div class="col-12">
+                                <label class="form-label">یادداشت سفارش (اختیاری)</label>
+                                <textarea name="note" class="form-control" rows="2"></textarea>
                             </div>
                         </div>
-                        {% csrf_token %}
                     </form>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-5 mt-4 mt-md-0">
             <div class="card shadow-sm border-0 rounded-4 sticky-top" style="top: 20px;">
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0 fw-bold">🛒 سبد خرید</h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="fw-bold mb-4">خلاصه سفارش</h5>
+                    {% if sample_product %}
+                    <div class="d-flex align-items-center mb-3">
+                        {% if sample_product.images %}
+                            <img src="{{ sample_product.images.0 }}" class="rounded me-3 border" width="60" height="60" style="object-fit: cover;">
+                        {% else %}
+                            <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center border" style="width: 60px; height: 60px;">
+                                <i class="bi bi-image text-muted"></i>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h6 class="mb-1 fw-bold">{{ sample_product.name }}</h6>
+                            <div class="text-muted small">تعداد: ۱ عدد</div>
+                        </div>
+                    </div>
+                    
+                    <hr>
                     
                     <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted">مجموع اقلام</span>
-                        <span>250,000 تومان</span>
+                        <span class="text-muted">مبلغ کل</span>
+                        <span class="fw-bold">{{ sample_product.base_price|intcomma }} تومان</span>
                     </div>
-                    <div class="d-flex justify-content-between mb-2">
+                    <div class="d-flex justify-content-between mb-3">
                         <span class="text-muted">هزینه ارسال</span>
-                        <span>35,000 تومان</span>
-                    </div>
-                    <hr>
-                    <div class="d-flex justify-content-between mb-4">
-                        <span class="fw-bold fs-5">مبلغ قابل پرداخت</span>
-                        <span class="fw-bold fs-5 text-primary">285,000 تومان</span>
+                        <span class="text-success">رایگان</span>
                     </div>
 
-                    <button type="submit" form="checkout-form" class="btn btn-primary w-100 py-2 fw-bold mb-2">
-                        پرداخت و ثبت نهایی
+                    <button type="submit" form="checkout-form" class="btn btn-primary w-100 py-3 fw-bold rounded-3 shadow-sm">
+                        ✅ ثبت نهایی سفارش
                     </button>
-                    <a href="{% url 'shop-store' shop.slug %}" class="btn btn-outline-secondary w-100">
-                        بازگشت به فروشگاه
-                    </a>
+                    {% else %}
+                        <div class="alert alert-warning">سبد خرید خالی است.</div>
+                        <a href="{% url 'shop-store' shop.slug %}" class="btn btn-outline-primary w-100">بازگشت به فروشگاه</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
