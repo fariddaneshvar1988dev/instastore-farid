@@ -1,43 +1,63 @@
 {% extends 'base.html' %}
 {% load humanize %}
 
-{% block title %}تسویه حساب | {{ shop.shop_name }}{% endblock %}
-
 {% block content %}
+<<<<<<< HEAD
 <div class="container py-5">
     <div class="row">
         <div class="col-md-7">
             <div class="card shadow-sm border-0 rounded-4 mb-4">
+=======
+<div class="container mt-4">
+    <div class="row g-4">
+        <div class="col-lg-5 order-lg-last">
+            <div class="card border-0 shadow-sm rounded-4">
+>>>>>>> e87f22df02c13fbcb3fa7b56e1455c79e7e00cb9
                 <div class="card-header bg-white py-3">
-                    <h5 class="mb-0 fw-bold">📍 اطلاعات ارسال</h5>
+                    <h5 class="mb-0 fw-bold">خلاصه سفارش</h5>
                 </div>
-                <div class="card-body p-4">
-                    <form method="POST" id="checkout-form">
-                        {% csrf_token %}
-                        {% if messages %}
-                            {% for message in messages %}
-                                <div class="alert alert-{{ message.tags }} small">{{ message }}</div>
+                <div class="card-body p-0">
+                    {% if cart %}
+                        <ul class="list-group list-group-flush">
+                            {% for key, item in cart.items %}
+                            <li class="list-group-item d-flex gap-3 align-items-center py-3">
+                                
+                                <a href="/shop/{{ item.shop_slug }}/product/{{ item.product_id }}/">
+                                    <img src="{{ item.image }}" class="rounded-3 border" style="width: 60px; height: 60px; object-fit: cover;">
+                                </a>
+                                
+                                <div class="flex-grow-1">
+                                    <a href="/shop/{{ item.shop_slug }}/product/{{ item.product_id }}/" class="text-decoration-none text-dark">
+                                        <h6 class="mb-1 fw-bold small">{{ item.name }}</h6>
+                                    </a>
+                                    
+                                    {% if item.variant_id %}
+                                        <div class="text-muted small">{{ item.color }} | {{ item.size }}</div>
+                                    {% endif %}
+                                    <div class="d-flex justify-content-between mt-2">
+                                        <span class="text-muted small">{{ item.quantity }} عدد</span>
+                                        <span class="fw-bold text-primary">{{ item.price|intcomma }}</span>
+                                    </div>
+                                </div>
+                                
+                                <button class="btn btn-outline-danger btn-sm rounded-circle" 
+                                        style="width: 30px; height: 30px; padding: 0;"
+                                        hx-post="/api/cart/remove/{{ key }}/"
+                                        hx-swap="none"
+                                        hx-on::after-request="window.location.reload()"
+                                        title="حذف">
+                                    <i class="bi bi-trash small"></i>
+                                </button>
+                            </li>
                             {% endfor %}
-                        {% endif %}
-
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">نام و نام خانوادگی *</label>
-                                <input type="text" name="customer_name" class="form-control" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">شماره موبایل *</label>
-                                <input type="tel" name="customer_phone" class="form-control" placeholder="09xxxxxxxxx" required>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label">آدرس دقیق پستی *</label>
-                                <textarea name="address" class="form-control" rows="3" required></textarea>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label">یادداشت سفارش (اختیاری)</label>
-                                <textarea name="note" class="form-control" rows="2"></textarea>
+                        </ul>
+                        <div class="p-3 bg-light">
+                            <div class="d-flex justify-content-between fw-bold fs-5">
+                                <span>مبلغ کل:</span>
+                                <span>{{ total_price|intcomma }} تومان</span>
                             </div>
                         </div>
+<<<<<<< HEAD
 
                         <div class="card bg-light border-0 mt-4 rounded-3">
                             <div class="card-body">
@@ -80,10 +100,16 @@
                         </div>
 
                     </form>
+=======
+                    {% else %}
+                        <div class="p-4 text-center">سبد خالی است</div>
+                    {% endif %}
+>>>>>>> e87f22df02c13fbcb3fa7b56e1455c79e7e00cb9
                 </div>
             </div>
         </div>
 
+<<<<<<< HEAD
         <div class="col-md-5">
             <div class="card shadow-sm border-0 rounded-4 sticky-top" style="top: 20px;">
                 <div class="card-header bg-light py-3">
@@ -124,6 +150,38 @@
                         <div class="alert alert-info text-center">سبد خرید شما خالی است.</div>
                         <a href="{% url 'shop-store' shop.slug %}" class="btn btn-outline-primary w-100">بازگشت به فروشگاه</a>
                     {% endif %}
+=======
+        <div class="col-lg-7">
+             <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold mb-4">اطلاعات ارسال</h4>
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">نام و نام خانوادگی</label>
+                                <input type="text" name="customer_name" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">شماره موبایل</label>
+                                <input type="tel" name="customer_phone" class="form-control" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">آدرس</label>
+                                <textarea name="address" class="form-control" rows="3" required></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">توضیحات</label>
+                                <textarea name="note" class="form-control" rows="2"></textarea>
+                            </div>
+                        </div>
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary py-3" {% if not cart %}disabled{% endif %}>
+                                ثبت نهایی سفارش
+                            </button>
+                        </div>
+                    </form>
+>>>>>>> e87f22df02c13fbcb3fa7b56e1455c79e7e00cb9
                 </div>
             </div>
         </div>

@@ -1,6 +1,5 @@
 import logging
-from django.conf import settings
-from instastore.utils import ZarinPalService
+import json
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import TemplateView, CreateView, UpdateView, DetailView, View
 from django.http import JsonResponse, Http404, HttpResponseForbidden
@@ -10,32 +9,143 @@ from django.utils.decorators import method_decorator
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.core.files.storage import FileSystemStorage
-from django.db.models import Sum, Count
-from django.contrib.auth import login, logout, authenticate
+from django.db.models import Sum
+from django.contrib.auth import login, logout
 from django.db import transaction
 from django.utils import timezone
 
 from shops.models import Shop, Plan
 from products.models import Product, Category, ProductVariant
 from orders.models import Order, OrderItem
-from customers.models import Customer
 from .forms import ProductForm, SellerRegisterForm, ShopSettingsForm
-from .cart import Cart
 
 logger = logging.getLogger('instastore')
 
-# ==========================================================
-# 1. صفحات عمومی و فروشگاه مشتری
-# ==========================================================
+# ==========================================
+# بخش مدیریت سبد خرید (Cart Logic)
+# ==========================================
 
-class HomeView(TemplateView):
-    template_name = 'frontend/home.html'
+@require_http_methods(["POST"])
+def add_to_cart(request, product_id):
+    """
+    افزودن محصول به سبد خرید با پشتیبانی از واریانت (رنگ و سایز)
+    """
+    product = get_object_or_404(Product, id=product_id)
+    cart = request.session.get('cart', {})
+    
+    try:
+        quantity = int(request.POST.get('quantity', 1))
+    except ValueError:
+        quantity = 1
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        active_shops = [s for s in Shop.objects.filter(is_active=True) if s.is_subscription_active()]
-        context['featured_shops'] = active_shops[:6]
-        return context
+    variant_id = request.POST.get('variant_id') # دریافت آیدی واریانت از فرم
+    
+    variant = None
+    if variant_id:
+        variant = get_object_or_404(ProductVariant, id=variant_id, product=product)
+
+    # 1. ساخت کلید یکتا برای سبد خرید
+    if variant:
+        # کلید ترکیبی: "IDمحصول-IDواریانت"
+        product_key = f"{product.id}-{variant.id}"
+    else:
+        product_key = str(product.id)
+    
+    # 2. محاسبه قیمت آیتم
+    price = float(product.base_price)
+    if variant and variant.price_adjustment:
+        price += float(variant.price_adjustment)
+
+    # 3. چک کردن موجودی (اختیاری ولی توصیه شده)
+    current_qty_in_cart = 0
+    if product_key in cart:
+        current_qty_in_cart = cart[product_key]['quantity']
+    
+    max_stock = variant.stock if variant else product.total_stock
+    
+    # اگر موجودی کافی بود اضافه کن
+    if (current_qty_in_cart + quantity) <= max_stock:
+        if product_key in cart:
+            cart[product_key]['quantity'] += quantity
+        else:
+            img_url = product.images[0] if product.images else ''
+            
+            item_data = {
+                'product_id': product.id,
+                'name': product.name,
+                'price': price,
+                'quantity': quantity,
+                'image': img_url,
+                'shop_slug': product.shop.slug,
+            }
+            
+            # ذخیره اطلاعات رنگ و سایز برای نمایش در سبد
+            if variant:
+                item_data.update({
+                    'variant_id': variant.id,
+                    'size': variant.size,
+                    'color': variant.color
+                })
+            
+            cart[product_key] = item_data
+        
+        request.session['cart'] = cart
+        request.session.modified = True
+    else:
+        # اینجا می‌توان پیام خطا لاگ کرد یا هندل کرد (فعلا نادیده می‌گیریم)
+        pass
+
+    return render_cart_sidebar(request, cart)
+
+@require_http_methods(["POST"])
+def remove_from_cart(request, item_key):
+    """
+    حذف آیتم از سبد خرید
+    ورودی item_key حالا رشته است تا کلیدهای ترکیبی مثل '4-12' را ساپورت کند
+    """
+    cart = request.session.get('cart', {})
+    
+    # تبدیل به رشته محض اطمینان
+    key_str = str(item_key)
+    
+    if key_str in cart:
+        del cart[key_str]
+        request.session['cart'] = cart
+        request.session.modified = True
+        
+    return render_cart_sidebar(request, cart)
+
+def get_cart_sidebar(request):
+    """تابع فراخوانی اولیه سایدبار (هنگام لود صفحه)"""
+    cart = request.session.get('cart', {})
+    return render_cart_sidebar(request, cart)
+
+def render_cart_sidebar(request, cart):
+    """تابع کمکی رندر HTML سایدبار"""
+    total_items = sum(item['quantity'] for item in cart.values())
+    total_price = sum(item['price'] * item['quantity'] for item in cart.values())
+    
+    # پیدا کردن اسلاگ فروشگاه برای لینک‌های دکمه‌ها
+    shop_slug = None
+    if cart:
+        try:
+            first_item = next(iter(cart.values()))
+            shop_slug = first_item.get('shop_slug')
+        except:
+            pass
+
+    context = {
+        'cart': cart,
+        'cart_total_count': total_items,
+        'cart_total_price': total_price,
+        'shop_slug': shop_slug,
+    }
+    return render(request, 'partials/cart_sidebar.html', context)
+
+
+# ==========================================
+# ویوهای فروشگاه (سمت مشتری)
+# ==========================================
 
 class ShopStoreView(TemplateView):
     template_name = 'frontend/shop_store.html'
@@ -44,20 +154,18 @@ class ShopStoreView(TemplateView):
         shop_slug = kwargs.get('shop_slug')
         # نکته: با تغییر url به str، اینجا هم اسلاگ فارسی درست دریافت می‌شود
         shop = get_object_or_404(Shop, slug=shop_slug, is_active=True)
-
-        if not shop.is_subscription_active():
-            raise Http404("این فروشگاه در حال حاضر غیرفعال است (پایان اشتراک).")
-
-        logger.info(f"Shop Visited: {shop.shop_name} (Slug: {shop_slug})")
-
+        
         context = super().get_context_data(**kwargs)
         context['shop'] = shop
-        context['categories'] = Category.objects.filter(
-            products__shop=shop, products__is_active=True, products__variants__stock__gt=0
+        
+        # فیلتر محصولات
+        products = Product.objects.filter(
+            shop=shop, 
+            is_active=True,
+            variants__stock__gt=0 # فقط محصولاتی که حداقل یک واریانت موجود دارند
         ).distinct()
-
-        products = Product.objects.filter(shop=shop, is_active=True, variants__stock__gt=0).distinct()
-
+        
+        # فیلتر جستجو و دسته‌بندی
         category_slug = self.request.GET.get('category')
         if category_slug:
             products = products.filter(category__slug=category_slug)
@@ -65,8 +173,9 @@ class ShopStoreView(TemplateView):
         search_query = self.request.GET.get('q')
         if search_query:
             products = products.filter(name__icontains=search_query)
-
+        
         context['products'] = products[:24]
+        context['categories'] = Category.objects.filter(products__shop=shop).distinct()
         return context
 
 class ProductDetailView(TemplateView):
@@ -75,120 +184,155 @@ class ProductDetailView(TemplateView):
     def get_context_data(self, **kwargs):
         shop_slug = kwargs.get('shop_slug')
         product_id = kwargs.get('product_id')
-        shop = get_object_or_404(Shop, slug=shop_slug, is_active=True)
         
-        if not shop.is_subscription_active():
-             raise Http404("این فروشگاه در حال حاضر غیرفعال است.")
-
-        product = get_object_or_404(Product, id=product_id, shop=shop, is_active=True)
-
+        shop = get_object_or_404(Shop, slug=shop_slug, is_active=True)
+        product = get_object_or_404(Product, id=product_id, shop=shop)
+        
         context = super().get_context_data(**kwargs)
         context['shop'] = shop
         context['product'] = product
-        context['variants'] = product.variants.filter(stock__gt=0)
+        
+        # --- آماده‌سازی داده‌ها برای سیستم انتخاب رنگ و سایز ---
+        variants = product.variants.filter(stock__gt=0)
+        
+        colors = set()
+        sizes = set()
+        variants_data = []
+
+        for v in variants:
+            colors.add(v.color)
+            sizes.add(v.size)
+            variants_data.append({
+                'id': v.id,
+                'color': v.color,
+                'size': v.size,
+                # تغییر مهم: تبدیل Decimal به float برای رفع خطای JSON
+                'price_adj': float(v.price_adjustment), 
+                'stock': v.stock
+            })
+            
+        context['unique_colors'] = sorted(list(colors))
+        context['unique_sizes'] = sorted(list(sizes))
+        
+        # حالا تبدیل به JSON بدون خطا انجام می‌شود
+        context['variants_json'] = json.dumps(variants_data)
+        
         context['related_products'] = Product.objects.filter(
-            shop=shop, category=product.category, is_active=True
+            shop=shop, 
+            category=product.category, 
+            is_active=True
         ).exclude(id=product.id)[:4]
-
+        
         return context
-
+    
 class CheckoutView(View):
     def get(self, request, shop_slug):
         shop = get_object_or_404(Shop, slug=shop_slug, is_active=True)
+        cart = request.session.get('cart', {})
+        total_price = sum(item['price'] * item['quantity'] for item in cart.values())
         
-        if not shop.is_subscription_active():
-            messages.error(request, "این فروشگاه در حال حاضر امکان ثبت سفارش ندارد.")
-            # اصلاح ریدایرکت با frontend:
-            return redirect('frontend:shop-store', shop_slug=shop.slug)
-
-        cart = Cart(request)
-        if cart.get_total_items() == 0:
-            messages.warning(request, "سبد خرید شما خالی است.")
-            return redirect('frontend:shop-store', shop_slug=shop.slug)
-            
-        return render(request, 'frontend/checkout.html', {'shop': shop})
+        return render(request, 'frontend/checkout.html', {
+            'shop': shop, 
+            'cart': cart,
+            'total_price': total_price
+        })
 
     def post(self, request, shop_slug):
         shop = get_object_or_404(Shop, slug=shop_slug, is_active=True)
-        cart = Cart(request)
+        cart = request.session.get('cart', {})
         
-        if not shop.is_subscription_active():
-            messages.error(request, "متاسفانه اشتراک این فروشگاه به پایان رسیده است.")
-            return redirect('frontend:shop-store', shop_slug=shop.slug)
-            
-        if not shop.can_accept_order():
-            messages.error(request, "این فروشگاه به سقف سفارشات ماهانه خود رسیده است.")
-            return redirect('frontend:shop-store', shop_slug=shop.slug)
-
-        if cart.get_total_items() == 0:
-            return redirect('frontend:shop-store', shop_slug=shop.slug)
+        if not cart:
+            messages.error(request, "سبد خرید شما خالی است.")
+            return redirect('shop-store', shop_slug=shop.slug)
 
         customer_name = request.POST.get('customer_name')
         customer_phone = request.POST.get('customer_phone')
         address = request.POST.get('address')
         note = request.POST.get('note')
-        payment_method = request.POST.get('payment_method')
-
-        if not all([customer_name, customer_phone, address, payment_method]):
-            messages.error(request, "لطفاً تمام فیلدهای ضروری را پر کنید.")
-            return redirect('frontend:checkout', shop_slug=shop.slug)
 
         try:
+            # شروع تراکنش اتمیک برای اطمینان از کسر موجودی صحیح
             with transaction.atomic():
+                
+                # 1. بررسی نهایی موجودی قبل از ثبت
+                for key, item in cart.items():
+                    variant_id = item.get('variant_id')
+                    quantity_needed = item['quantity']
+                    
+                    if variant_id:
+                        # قفل کردن رکورد برای جلوگیری از خرید همزمان (Action 6)
+                        variant = ProductVariant.objects.select_for_update().get(id=variant_id)
+                        if variant.stock < quantity_needed:
+                            messages.error(request, f"متاسفانه موجودی محصول {item['name']} ({item['color']}-{item['size']}) به پایان رسیده یا کمتر از تعداد درخواستی شماست.")
+                            return redirect('checkout', shop_slug=shop.slug)
+                
+                # 2. ایجاد سفارش
+                total_amount = sum(item['price'] * item['quantity'] for item in cart.values())
+                
                 order = Order.objects.create(
                     shop=shop,
-                    customer=None,
+                    customer=None, # اگر سیستم مشتری دارید اینجا ست کنید
                     status='pending',
                     payment_method=payment_method,
                     customer_name=customer_name,
                     customer_phone=customer_phone,
                     shipping_address=address,
                     customer_notes=note,
-                    total_amount=cart.get_total_price(),
-                    subtotal=cart.get_total_price(),
+                    total_amount=total_amount,
+                    subtotal=total_amount,
                     shipping_cost=0
                 )
 
-                for item in cart:
-                    variant_id = item.get('variant_id')
-                    if variant_id:
-                        variant_obj = ProductVariant.objects.select_for_update().get(id=variant_id)
-                        if variant_obj.stock < item['quantity']:
-                            raise Exception(f"موجودی ناکافی برای {item['product'].name}")
+                # 3. ثبت آیتم‌ها و کسر موجودی
+                for key, item in cart.items():
+                    variant = None
+                    if item.get('variant_id'):
+                        variant = ProductVariant.objects.get(id=item['variant_id'])
+                        
+                        # کسر موجودی نهایی
+                        variant.stock -= item['quantity']
+                        variant.save()
 
-                        OrderItem.objects.create(
-                            order=order,
-                            variant=variant_obj,
-                            product_name=item['product'].name,
-                            size=item['size'],
-                            color=item['color'],
-                            unit_price=item['price'],
-                            quantity=item['quantity'],
-                            total_price=item['total_price']
-                        )
-                        variant_obj.stock -= item['quantity']
-                        variant_obj.save()
+                    OrderItem.objects.create(
+                        order=order,
+                        variant=variant,
+                        product_name=item['name'],
+                        size=item.get('size', 'استاندارد'),
+                        color=item.get('color', 'پیش‌فرض'),
+                        unit_price=item['price'],
+                        quantity=item['quantity'],
+                        total_price=item['price'] * item['quantity']
+                    )
 
-                cart.clear()
-                logger.info(f"New Order Created: #{order.order_id}")
+                logger.info(f"New Order Placed: #{order.order_id}")
+                
+                # 4. خالی کردن سبد خرید
+                del request.session['cart']
+                request.session.modified = True
 
-            if payment_method == 'card_to_card':
-                messages.success(request, f"سفارش #{order.order_id} ثبت شد. لطفاً مبلغ را کارت به کارت کنید.")
-            elif payment_method == 'online':
-                messages.info(request, "انتقال به درگاه پرداخت... (دمو)")
-            else:
-                messages.success(request, f"سفارش #{order.order_id} با موفقیت ثبت شد.")
-
-            return redirect('frontend:shop-store', shop_slug=shop.slug)
+            messages.success(request, f"سفارش شما با شماره {order.order_id} با موفقیت ثبت شد.")
+            return redirect('shop-store', shop_slug=shop.slug)
 
         except Exception as e:
             logger.error(f"Checkout Error: {str(e)}", exc_info=True)
-            messages.error(request, "خطا در ثبت سفارش. موجودی محصولات را چک کنید.")
-            return redirect('frontend:checkout', shop_slug=shop.slug)
+            messages.error(request, "خطایی در ثبت سفارش رخ داد. لطفا دوباره تلاش کنید.")
+            return redirect('checkout', shop_slug=shop.slug)
 
-# ==========================================================
-# 2. پنل فروشنده
-# ==========================================================
+
+# ==========================================
+# سایر ویوها (صفحه اصلی، پنل فروشنده و...)
+# ==========================================
+
+class HomeView(TemplateView):
+    template_name = 'frontend/home.html'
+
+def about_page(request):
+    return render(request, 'frontend/about.html')
+
+def contact_page(request):
+    return render(request, 'frontend/contact.html')
+
+# --- پنل فروشنده ---
 
 class SellerRegisterView(CreateView):
     template_name = 'frontend/register.html'
@@ -203,21 +347,30 @@ class SellerRegisterView(CreateView):
 
     def form_valid(self, form):
         try:
-            with transaction.atomic():
-                user = form.save(commit=False)
-                # user = form.save()
-                shop = Shop.objects.create(
-                    user=user,
-                    shop_name=form.cleaned_data.get('shop_name'),
-                    instagram_username=form.cleaned_data.get('instagram_username'),
-                    is_active=True
-                )
-                login(self.request, user)
-                messages.success(self.request, f"فروشگاه {shop.shop_name} با موفقیت ساخته شد.")
-                return redirect(self.success_url)
+            user = form.save()
+            shop_name = form.cleaned_data.get('shop_name')
+            shop_slug = form.cleaned_data.get('shop_slug')
+            insta_id = form.cleaned_data.get('instagram_username')
+            
+            final_slug = shop_slug
+            if Shop.objects.filter(slug=final_slug).exists():
+                final_slug = f"{shop_slug}-{user.id}"
+
+            Shop.objects.create(
+                user=user,  
+                shop_name=shop_name,
+                slug=final_slug,
+                instagram_username=insta_id,
+                is_active=True
+            )
+            
+            login(self.request, user)
+            messages.success(self.request, f"فروشگاه «{shop_name}» ساخته شد.")
+            return redirect(self.success_url)
+            
         except Exception as e:
             logger.error(f"Registration Error: {str(e)}")
-            messages.error(self.request, "خطایی در ثبت فروشگاه رخ داد.")
+            messages.error(self.request, "خطایی رخ داد.")
             return self.form_invalid(form)
 
 @method_decorator(login_required, name='dispatch')
@@ -233,18 +386,12 @@ class SellerDashboardView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         shop = self.request.user.shop
-        days_left = shop.remaining_days
-        
-        if days_left <= 0:
-            messages.warning(self.request, "اشتراک شما تمام شده است!")
-        elif days_left < 2:
-            messages.warning(self.request, f"تنها {days_left} روز از اشتراک باقی مانده است.")
-
         context.update({
             'shop': shop,
             'total_orders': Order.objects.filter(shop=shop).count(),
             'pending_orders': Order.objects.filter(shop=shop, status='pending').count(),
             'total_products': Product.objects.filter(shop=shop).count(),
+            'low_stock_products': Product.objects.filter(shop=shop).annotate(total_stock=Sum('variants__stock')).filter(total_stock__lt=5).count(),
             'recent_orders': Order.objects.filter(shop=shop).order_by('-created_at')[:5],
         })
         return context
@@ -258,6 +405,38 @@ class SellerProductsView(TemplateView):
         shop = self.request.user.shop
         context['products'] = Product.objects.filter(shop=shop, is_active=True)
         context['shop'] = shop
+        return context
+
+@method_decorator(login_required, name='dispatch')
+class SellerOrdersView(TemplateView):
+    template_name = 'frontend/seller_orders.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        if not hasattr(request.user, 'shop'):
+            return redirect('home')
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        shop = self.request.user.shop
+        status_filter = self.request.GET.get('status', 'all')
+        orders = Order.objects.filter(shop=shop)
+        
+        if status_filter != 'all':
+            orders = orders.filter(status=status_filter)
+        
+        context.update({
+            'shop': shop,
+            'orders': orders.order_by('-created_at'),
+            'status_filter': status_filter,
+            'order_stats': {
+                'all': Order.objects.filter(shop=shop).count(),
+                'pending': Order.objects.filter(shop=shop, status='pending').count(),
+                'confirmed': Order.objects.filter(shop=shop, status='confirmed').count(),
+                'shipped': Order.objects.filter(shop=shop, status='shipped').count(),
+                'delivered': Order.objects.filter(shop=shop, status='delivered').count(),
+            }
+        })
         return context
 
 @method_decorator(login_required, name='dispatch')
@@ -282,33 +461,55 @@ class SellerProductCreateView(CreateView):
 
     def form_valid(self, form):
         try:
-            product = form.save(commit=False)
-            product.shop = self.request.user.shop
-            
-            fs = FileSystemStorage()
-            images = []
-            for i in range(1, 4):
-                img_field = self.request.FILES.get(f'image{i}')
-                if img_field:
-                    filename = fs.save(f"products/{img_field.name}", img_field)
-                    images.append(fs.url(filename))
-            if images:
-                product.images = images
-            
-            product.save()
-            
-            ProductVariant.objects.create(
-                product=product,
-                size=form.cleaned_data.get('initial_size', 'Free Size'),
-                color=form.cleaned_data.get('initial_color', 'Default'),
-                stock=form.cleaned_data.get('initial_stock', 0),
-                price_adjustment=0
-            )
-            messages.success(self.request, 'محصول ایجاد شد')
-            return redirect(self.success_url)
+            with transaction.atomic():
+                product = form.save(commit=False)
+                product.shop = self.request.user.shop
+                
+                fs = FileSystemStorage()
+                images = []
+                for i in range(1, 4):
+                    img_field = self.request.FILES.get(f'image{i}')
+                    if img_field:
+                        filename = fs.save(f"products/{img_field.name}", img_field)
+                        images.append(fs.url(filename))
+                
+                if images:
+                    product.images = images
+                
+                product.save()
+                
+                colors = self.request.POST.getlist('vars_color[]')
+                sizes = self.request.POST.getlist('vars_size[]')
+                stocks = self.request.POST.getlist('vars_stock[]')
+                prices = self.request.POST.getlist('vars_price[]')
+                
+                if colors and len(colors) > 0:
+                    for c, s, st, p in zip(colors, sizes, stocks, prices):
+                        p_adj = int(p) if p and p.strip() else 0
+                        st_val = int(st) if st and st.strip() else 0
+                        
+                        ProductVariant.objects.create(
+                            product=product,
+                            color=c,
+                            size=s,
+                            stock=st_val,
+                            price_adjustment=p_adj
+                        )
+                else:
+                    ProductVariant.objects.create(
+                        product=product,
+                        color="پیش‌فرض",
+                        size="استاندارد",
+                        stock=0,
+                        price_adjustment=0
+                    )
+
+                messages.success(self.request, 'محصول با موفقیت ایجاد شد')
+                return redirect(self.success_url)
+                
         except Exception as e:
             logger.error(f"Product Create Error: {str(e)}")
-            messages.error(self.request, "خطا در ایجاد محصول.")
+            messages.error(self.request, "خطایی در ذخیره محصول رخ داد.")
             return self.form_invalid(form)
 
 @method_decorator(login_required, name='dispatch')
@@ -327,36 +528,15 @@ class SellerProductUpdateView(UpdateView):
         kwargs['shop'] = self.request.user.shop
         return kwargs
 
-    def get_initial(self):
-        initial = super().get_initial()
-        variant = self.object.variants.first()
-        if variant:
-            initial['initial_stock'] = variant.stock
-            initial['initial_size'] = variant.size
-            initial['initial_color'] = variant.color
-        return initial
-
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        variant = self.object.variants.first()
-        if variant:
-            variant.stock = form.cleaned_data.get('initial_stock', variant.stock)
-            variant.size = form.cleaned_data.get('initial_size', variant.size)
-            variant.color = form.cleaned_data.get('initial_color', variant.color)
-            variant.save()
-        return response
-
 @require_http_methods(["DELETE", "POST"])
 @login_required
 def delete_product(request, pk):
     shop = request.user.shop
     product = get_object_or_404(Product, pk=pk, shop=shop)
     try:
-        product.is_active = False
-        product.save()
-        return JsonResponse({'success': True, 'message': 'محصول آرشیو شد.'})
+        product.delete()
+        return JsonResponse({'success': True})
     except Exception as e:
-        logger.error(f"Soft Delete Error: {str(e)}")
         return JsonResponse({'success': False}, status=500)
 
 @method_decorator(login_required, name='dispatch')
@@ -378,7 +558,6 @@ class SellerOrderDetailView(DetailView):
     model = Order
     template_name = 'frontend/seller_order_detail.html'
     context_object_name = 'order'
-
     def get_queryset(self):
         return Order.objects.filter(shop=self.request.user.shop)
 
@@ -387,124 +566,12 @@ class ShopSettingsView(UpdateView):
     model = Shop
     form_class = ShopSettingsForm
     template_name = 'frontend/seller_settings.html'
-    # اصلاح ریدایرکت
-    success_url = reverse_lazy('frontend:seller-settings')
-
+    success_url = reverse_lazy('seller-settings')
     def get_object(self):
         return self.request.user.shop
-
     def form_valid(self, form):
-        messages.success(self.request, "تنظیمات فروشگاه ذخیره شد.")
+        messages.success(self.request, "تنظیمات ذخیره شد.")
         return super().form_valid(form)
-
-@method_decorator(login_required, name='dispatch')
-class SalesReportView(TemplateView):
-    template_name = 'frontend/sales_report.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        shop = self.request.user.shop
-        now = timezone.now()
-        month_start = now.replace(day=1)
-        month_orders = Order.objects.filter(shop=shop, created_at__gte=month_start)
-        month_sales = month_orders.aggregate(total=Sum('total_amount'))['total'] or 0
-        context.update({
-            'month_sales': month_sales,
-            'month_count': month_orders.count(),
-            'top_products': month_orders.values('items__product_name').annotate(count=Count('items')).order_by('-count')[:5]
-        })
-        return context
-
-# ==========================================================
-# 3. مدیریت اشتراک و پرداخت
-# ==========================================================
-
-@method_decorator(login_required, name='dispatch')
-class UpgradePlanView(TemplateView):
-    template_name = 'frontend/upgrade_plan.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['plans'] = Plan.objects.filter(is_active=True).exclude(code=Plan.PLAN_FREE)
-        context['shop'] = self.request.user.shop
-        return context
-
-@login_required
-def start_subscription_payment(request, plan_id):
-    shop = request.user.shop
-    plan = get_object_or_404(Plan, id=plan_id)
-
-    if plan.price == 0:
-        shop.renew_subscription(new_plan=plan)
-        messages.success(request, f"پلن {plan.name} فعال شد.")
-        return redirect('frontend:seller-dashboard')
-
-    request.session['pending_plan_id'] = plan.id
-    zarinpal = ZarinPalService()
-    # اصلاح آدرس کال‌بک
-    callback_url = request.build_absolute_uri(reverse_lazy('frontend:payment-callback'))
-
-    result = zarinpal.send_request(
-        amount=plan.price,
-        description=f"خرید اشتراک {plan.name}",
-        callback_url=callback_url,
-        mobile=shop.phone_number,
-        email=request.user.email
-    )
-
-    if result['status']:
-        return redirect(result['url'])
-    else:
-        messages.error(request, f"خطا در درگاه: {result['message']}")
-        return redirect('frontend:upgrade-plan')
-
-@login_required
-def payment_callback(request):
-    authority = request.GET.get('Authority')
-    status = request.GET.get('Status')
-    plan_id = request.session.get('pending_plan_id')
-
-    if not plan_id:
-        messages.error(request, "نشست خرید منقضی شده.")
-        return redirect('frontend:upgrade-plan')
-
-    shop = request.user.shop
-    plan = get_object_or_404(Plan, id=plan_id)
-
-    if status != 'OK':
-        messages.warning(request, "پرداخت لغو شد.")
-        return redirect('frontend:upgrade-plan')
-
-    zarinpal = ZarinPalService()
-    verification = zarinpal.verify_payment(authority, plan.price)
-
-    if verification['status']:
-        shop.renew_subscription(new_plan=plan)
-        del request.session['pending_plan_id']
-        messages.success(request, f"اشتراک فعال شد. کد پیگیری: {verification['ref_id']}")
-        return redirect('frontend:seller-dashboard')
-    else:
-        messages.error(request, f"تراکنش ناموفق: {verification['message']}")
-        return redirect('frontend:upgrade-plan')
-
-# ==========================================================
-# 4. احراز هویت و ابزارها
-# ==========================================================
-
-def user_login_view(request):
-    if request.user.is_authenticated:
-        return redirect('frontend:seller-dashboard')
-
-    if request.method == 'POST':
-        u = request.POST.get('username')
-        p = request.POST.get('password')
-        user = authenticate(request, username=u, password=p)
-        if user:
-            login(request, user)
-            return redirect('frontend:seller-dashboard')
-        else:
-            messages.error(request, "نام کاربری یا رمز عبور اشتباه است.")
-    return render(request, 'frontend/login.html')
 
 def logout_view(request):
     logout(request)
@@ -519,38 +586,28 @@ def contact_page(request):
 def get_cart_component(request):
     return render(request, 'partials/cart_badge.html')
 
-# در instastore/frontend/views.py
+def cart_detail_view(request):
+    cart = request.session.get('cart', [])
+    return render(request, 'frontend/cart_detail.html', {'cart': cart})
 
-@require_POST
-def add_to_cart(request, product_id):
-    cart = Cart(request)
-    product = get_object_or_404(Product, id=product_id)
-    
-    # 1. چک کردن تداخل فروشگاه
-    # اگر سبد خالی نیست، چک کن محصول جدید مال همون فروشگاهِ توی سبد باشه
-    if cart.cart: # اگر سبد خالی نیست
-        # گرفتن آیدی اولین محصول توی سبد برای نمونه
-        first_item_id = next(iter(cart.cart))
-        first_item_product = Product.objects.get(id=first_item_id)
-        
-        # اگر فروشگاه محصول جدید با فروشگاه محصول توی سبد فرق داشت
-        if product.shop.id != first_item_product.shop.id:
-            cart.clear() # کل سبد قبلی را پاک کن (یا ارور بده)
-            # اختیاری: پیامی به کاربر بدهید که "سبد خرید قبلی شما مربوط به فروشگاه دیگری بود و حذف شد."
+@method_decorator(login_required, name='dispatch')
+class ProfileView(TemplateView):
+    template_name = 'frontend/profile.html'
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        context['user'] = user
+        if hasattr(user, 'shop'):
+            context['shop'] = user.shop
+            context['is_seller'] = True
+        else:
+            context['is_seller'] = False
+        return context
 
-    qty = int(request.POST.get('quantity', 1))
-    size = request.POST.get('size', 'Free Size')
-    color = request.POST.get('color', 'Default')
-    
-    cart.add(product_id=product_id, quantity=qty, size=size, color=color)
-    return JsonResponse({'success': True, 'total_items': cart.get_total_items()})
-
-class OrderTrackingView(View):
-    def get(self, request):
-        return render(request, 'frontend/track_order.html')
-    
-    def post(self, request):
-        order_id = request.POST.get('order_id')
-        phone = request.POST.get('phone')
-        # اینجا باید لاجیک جستجو را بگذارید. فعلا ساده:
-        return render(request, 'frontend/track_order.html', {'message': 'سیستم پیگیری در حال تکمیل است'})
+# API های اضافی (Placeholder)
+@require_http_methods(["GET"])
+def load_more_products(request, shop_slug):
+    return JsonResponse({'html': ''}) 
+@require_http_methods(["GET"])
+def search_products(request, shop_slug):
+    return JsonResponse({'html': ''})

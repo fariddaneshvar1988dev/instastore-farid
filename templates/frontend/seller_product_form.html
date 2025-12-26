@@ -17,6 +17,7 @@
                         <div class="alert alert-danger"><ul class="mb-0 small">{% for field in form %}{% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}{% endfor %}</ul></div>
                         {% endif %}
                         <div class="row g-3">
+<<<<<<< HEAD
                             <div class="col-md-12"><label class="form-label">نام محصول *</label>{{ form.name }}</div>
                             <div class="col-md-6"><label class="form-label">دسته‌بندی *</label>{{ form.category }}</div>
                             <div class="col-md-6"><label class="form-label">قیمت پایه (تومان) *</label>{{ form.base_price }}</div>
@@ -32,6 +33,111 @@
                                     <div class="col-md-4"><label class="form-label small">تصویر اصلی</label>{{ form.image1 }}</div>
                                     <div class="col-md-4"><label class="form-label small">تصویر دوم</label>{{ form.image2 }}</div>
                                     <div class="col-md-4"><label class="form-label small">تصویر سوم</label>{{ form.image3 }}</div>
+=======
+                            <div class="col-md-12">
+                                <label class="form-label">نام محصول *</label>
+                                {{ form.name }}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">دسته‌بندی *</label>
+                                {{ form.category }}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">قیمت پایه (تومان) *</label>
+                                {{ form.base_price }}
+                            </div>
+
+                            <div class="col-12 mt-4">
+                                <div class="card bg-light border-0">
+                                    <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-palette"></i> تنوع محصول (رنگ و سایز)</h6>
+                                        <button type="button" class="btn btn-sm btn-success" onclick="addVariantRow()">
+                                            <i class="bi bi-plus-lg"></i> افزودن تنوع جدید
+                                        </button>
+                                    </div>
+                                    <div class="card-body p-2">
+                                        <div class="row g-2 mb-2 text-muted small px-2">
+                                            <div class="col-3">رنگ (مثال: قرمز)</div>
+                                            <div class="col-3">سایز (مثال: XL)</div>
+                                            <div class="col-3">موجودی</div>
+                                            <div class="col-2">تفاوت قیمت</div>
+                                            <div class="col-1"></div>
+                                        </div>
+                                        
+                                        <div id="variants-container">
+                                            <div class="variant-row row g-2 mb-2 align-items-center bg-white p-2 rounded shadow-sm">
+                                                <div class="col-3">
+                                                    <input type="text" name="vars_color[]" class="form-control form-control-sm" placeholder="رنگ" required>
+                                                </div>
+                                                <div class="col-3">
+                                                    <input type="text" name="vars_size[]" class="form-control form-control-sm" placeholder="سایز" required>
+                                                </div>
+                                                <div class="col-3">
+                                                    <input type="number" name="vars_stock[]" class="form-control form-control-sm" placeholder="0" min="0" required>
+                                                </div>
+                                                <div class="col-2">
+                                                    <input type="number" name="vars_price[]" class="form-control form-control-sm" placeholder="0" value="0">
+                                                </div>
+                                                <div class="col-1 text-end">
+                                                    <button type="button" class="btn btn-text text-danger" onclick="removeRow(this)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mt-4">
+                                <label class="form-label">برند</label>
+                                {{ form.brand }}
+                            </div>
+
+                            <div class="col-md-6 mt-4">
+                                <label class="form-label">جنس پارچه</label>
+                                {{ form.material }}
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">توضیحات محصول</label>
+                                {{ form.description }}
+                            </div>
+
+                            <div class="col-12 border-top pt-3 mt-2">
+                                <h6 class="mb-3 fw-bold text-muted">تصاویر محصول</h6>
+                                <div class="row g-3">
+                                    {% for field in form %}
+                                        {% if field.name == 'image1' or field.name == 'image2' or field.name == 'image3' %}
+                                        <div class="col-md-4">
+                                            <label class="form-label small">{{ field.label }}</label>
+                                            
+                                            <div class="upload-box text-center">
+                                                <label for="{{ field.id_for_label }}" class="btn btn-outline-primary w-100 cursor-pointer">
+                                                    <i class="bi bi-cloud-arrow-up"></i> انتخاب تصویر
+                                                </label>
+                                                
+                                                <div style="height: 0; overflow: hidden;">
+                                                    {{ field }} 
+                                                </div>
+
+                                                <div id="file-name-{{ field.id_for_label }}" class="text-muted small mt-2 text-truncate" dir="ltr">
+                                                    {% if field.value %}
+                                                        <span class="text-success"><i class="bi bi-check-circle"></i> تصویر موجود است</span>
+                                                    {% else %}
+                                                        هنوز انتخابی نشده
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            
+                                            {% if field.errors %}
+                                            <div class="text-danger small mt-1">{{ field.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+>>>>>>> e87f22df02c13fbcb3fa7b56e1455c79e7e00cb9
                                 </div>
                             </div>
                             <div class="col-12 mt-3">
@@ -51,4 +157,57 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. نمایش نام فایل انتخاب شده
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(input => {
+        input.addEventListener('change', function(e) {
+            const fileName = e.target.files[0] ? e.target.files[0].name : "فایلی انتخاب نشده";
+            const displayBox = document.getElementById('file-name-' + input.id);
+            if (displayBox) {
+                displayBox.textContent = fileName;
+                displayBox.classList.add('text-dark');
+            }
+        });
+    });
+});
+
+// 2. توابع مدیریت ردیف‌های تنوع محصول
+function addVariantRow() {
+    const container = document.getElementById('variants-container');
+    const newRow = document.createElement('div');
+    newRow.className = 'variant-row row g-2 mb-2 align-items-center bg-white p-2 rounded shadow-sm';
+    newRow.innerHTML = `
+        <div class="col-3">
+            <input type="text" name="vars_color[]" class="form-control form-control-sm" placeholder="رنگ" required>
+        </div>
+        <div class="col-3">
+            <input type="text" name="vars_size[]" class="form-control form-control-sm" placeholder="سایز" required>
+        </div>
+        <div class="col-3">
+            <input type="number" name="vars_stock[]" class="form-control form-control-sm" placeholder="0" min="0" required>
+        </div>
+        <div class="col-2">
+            <input type="number" name="vars_price[]" class="form-control form-control-sm" placeholder="0" value="0">
+        </div>
+        <div class="col-1 text-end">
+            <button type="button" class="btn btn-text text-danger" onclick="removeRow(this)">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(newRow);
+}
+
+function removeRow(btn) {
+    const rows = document.getElementsByClassName('variant-row');
+    if (rows.length > 1) {
+        btn.closest('.variant-row').remove();
+    } else {
+        alert("حداقل یک تنوع باید وجود داشته باشد.");
+    }
+}
+</script>
 {% endblock %}

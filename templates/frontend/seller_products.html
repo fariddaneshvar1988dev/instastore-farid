@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{% load humanize %}
 {% block title %}مدیریت محصولات - {{ shop.shop_name }}{% endblock %}
 
 {% block content %}
@@ -13,6 +13,10 @@
         </div>
     </div>
 
+<<<<<<< HEAD
+=======
+    <!-- آمار محصولات -->
+>>>>>>> e87f22df02c13fbcb3fa7b56e1455c79e7e00cb9
     <div class="row mb-4">
         <div class="col-md-4">
             <div class="card bg-primary text-white">
@@ -40,6 +44,10 @@
         </div>
     </div>
 
+<<<<<<< HEAD
+=======
+    <!-- لیست محصولات -->
+>>>>>>> e87f22df02c13fbcb3fa7b56e1455c79e7e00cb9
     <div class="card shadow-sm">
         <div class="card-body">
             <div class="table-responsive">
@@ -60,7 +68,15 @@
                         <tr>
                             <td>
                                 <div style="width: 50px; height: 50px; overflow: hidden; border-radius: 6px;">
+<<<<<<< HEAD
                                     <img src="{{ product.images.0|default:'/static/no-image.jpg' }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+=======
+                                    <a href="{% url 'product-detail' shop.slug product.id %}" >
+                                        <img src="{{ product.images.0|default:'/static/no-image.jpg' }}"
+                                            alt="{{ product.name }}"
+                                            style="width: 100%; height: 100%; object-fit: cover;">
+                                    </a>
+>>>>>>> e87f22df02c13fbcb3fa7b56e1455c79e7e00cb9
                                 </div>
                             </td>
                             <td>
@@ -69,20 +85,22 @@
                                 <small class="text-muted">{{ product.category.name|default:"بدون دسته" }}</small>
                             </td>
                             <td>
-                                <span class="fw-bold">{{ product.get_price_in_toman|floatformat:0|floatformat:0 }}</span>
+                                <span class="fw-bold">{{ product.get_price_in_toman|intcomma }}</span>
                                 <small class="text-muted d-block">تومان</small>
                             </td>
+
                             <td>
-                                {% if product.stock > 10 %}
-                                <span class="badge bg-success">{{ product.stock }}</span>
-                                {% elif product.stock > 0 %}
-                                <span class="badge bg-warning">{{ product.stock }}</span>
+                                {% if product.total_stock > 10 %}
+                                <span class="badge bg-success">{{ product.total_stock }}</span>
+                                {% elif product.total_stock > 0 %}
+                                <span class="badge bg-warning">{{ product.total_stock }}</span>
                                 {% else %}
                                 <span class="badge bg-danger">۰</span>
                                 {% endif %}
                             </td>
+
                             <td>
-                                {% if product.is_available and product.stock > 0 %}
+                                {% if product.is_available %}
                                 <span class="badge bg-success">فعال</span>
                                 {% else %}
                                 <span class="badge bg-secondary">غیرفعال</span>
@@ -93,11 +111,24 @@
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
+<<<<<<< HEAD
                                     <a href="{% url 'frontend:seller-product-edit' product.id %}" class="btn btn-outline-primary"><i class="bi bi-pencil"></i></a>
                                     {% if request.user.shop %}
                                     <a href="{% url 'frontend:shop-store' shop_slug=request.user.shop.slug %}" target="_blank" class="btn btn-outline-info"><i class="bi bi-eye"></i></a>
                                     {% endif %}
                                     <button class="btn btn-outline-danger" onclick="deleteProduct({{ product.id }})"><i class="bi bi-trash"></i></button>
+=======
+                                    <a href="/seller/products/{{ product.id }}/edit/" class="btn btn-outline-primary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="/shop/{{ shop.slug }}/product/{{ product.id }}/"
+                                        class="btn btn-outline-info">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <button class="btn btn-outline-danger" onclick="deleteProduct('{{ product.id }}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+>>>>>>> e87f22df02c13fbcb3fa7b56e1455c79e7e00cb9
                                 </div>
                             </td>
                         </tr>
@@ -118,6 +149,7 @@
 </div>
 
 <script>
+<<<<<<< HEAD
 function deleteProduct(productId) {
     if (confirm('آیا از حذف این محصول اطمینان دارید؟')) {
         fetch(`/seller/products/${productId}/delete/`, {
@@ -129,7 +161,22 @@ function deleteProduct(productId) {
                 location.reload();
             }
         });
+=======
+    function deleteProduct(productId) {
+        if (confirm('آیا از حذف این محصول اطمینان دارید؟')) {
+            fetch(`/seller/products/${productId}/delete/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    }
+                });
+        }
+>>>>>>> e87f22df02c13fbcb3fa7b56e1455c79e7e00cb9
     }
-}
 </script>
 {% endblock %}

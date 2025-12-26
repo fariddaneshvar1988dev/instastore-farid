@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}پروفایل کاربری | InstaStore{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-person-circle"></i> پروفایل کاربری</h5>
+                <span class="badge bg-light text-primary">{{ user.username }}</span>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <h6 class="border-bottom pb-2">اطلاعات حساب</h6>
+                        <p><strong>نام کاربری:</strong> {{ user.username }}</p>
+                        <p><strong>تاریخ عضویت:</strong> {{ user.date_joined|date:"d F Y" }}</p>
+                        <p><strong>آخرین ورود:</strong> {{ user.last_login|timesince }} پیش</p>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h6 class="border-bottom pb-2">وضعیت فروشگاه</h6>
+                        {% if is_seller %}
+                            <div class="alert alert-success">
+                                <i class="bi bi-shop"></i> شما مالک فروشگاه <strong>{{ shop.shop_name }}</strong> هستید.
+                            </div>
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'seller-dashboard' %}" class="btn btn-warning">
+                                    <i class="bi bi-speedometer2"></i> ورود به داشبورد مدیریت
+                                </a>
+                                <a href="{% url 'shop-store' shop.slug %}" class="btn btn-outline-primary">
+                                    <i class="bi bi-eye"></i> مشاهده فروشگاه من
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-secondary">
+                                شما هنوز فروشگاهی نساخته‌اید.
+                            </div>
+                            <a href="{% url 'register-page' %}" class="btn btn-success w-100">
+                                <i class="bi bi-plus-circle"></i> ساخت فروشگاه جدید
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="d-flex gap-2 justify-content-end">
+                    <a href="{% url 'home' %}" class="btn btn-outline-secondary">بازگشت به خانه</a>
+                    <a href="{% url 'logout' %}" class="btn btn-danger">خروج از حساب</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

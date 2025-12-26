@@ -1,93 +1,278 @@
 {% extends 'base.html' %}
 {% load humanize %}
 
-{% block title %}{{ product.name }} | {{ product.shop.shop_name }}{% endblock %}
+{% block title %}{{ product.name }} | {{ shop.shop_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* حذف فلش‌های پیش‌فرض مرورگر برای اینپوت عدد */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
+    }
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container py-5">
+<div class="container mt-4 mt-lg-5">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'home' %}">خانه</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'shop-store' product.shop.slug %}">{{ product.shop.shop_name }}</a></li>
-            <li class="breadcrumb-item active" aria-current="page">{{ product.name }}</li>
+            <li class="breadcrumb-item">
+                <a href="/shop/{{ shop.slug }}/" class="text-decoration-none text-muted">
+                    <i class="bi bi-shop me-1"></i> فروشگاه {{ shop.shop_name }}
+                </a>
+            </li>
+            <li class="breadcrumb-item active text-primary fw-bold" aria-current="page">{{ product.name }}</li>
         </ol>
     </nav>
 
-    <div class="row g-5">
-        <div class="col-md-6">
-            <div class="card border-0">
+    <div class="row bg-white rounded-4 shadow-sm p-3 p-lg-4 border g-4">
+        <div class="col-lg-5">
+            <div class="position-relative mb-3">
                 {% if product.images %}
-                <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
-                    <div class="carousel-inner rounded">
-                        {% for image in product.images %}
-                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                            <img src="{{ image }}" class="d-block w-100" alt="{{ product.name }}" style="max-height: 500px; object-fit: contain;">
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% if product.images|length > 1 %}
-                    <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon bg-dark rounded-circle" aria-hidden="true"></span>
-                        <span class="visually-hidden">Previous</span>
-                    </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
-                        <span class="carousel-control-next-icon bg-dark rounded-circle" aria-hidden="true"></span>
-                        <span class="visually-hidden">Next</span>
-                    </button>
-                    {% endif %}
-                </div>
+                    <img id="main-image" src="{{ product.images.0 }}" 
+                         class="img-fluid rounded-4 w-100 shadow-sm border" 
+                         alt="{{ product.name }}"
+                         style="object-fit: cover; aspect-ratio: 1/1;">
                 {% else %}
-                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 400px;">
-                    <span class="text-muted fs-4">بدون تصویر</span>
+                    <div class="bg-light rounded-4 w-100 d-flex align-items-center justify-content-center text-muted" style="aspect-ratio: 1/1;">
+                        <i class="bi bi-image display-1"></i>
+                    </div>
+                {% endif %}
+                
+                {% if product.images|length > 1 %}
+                <div class="d-flex gap-2 overflow-auto pb-2 mt-2" style="scrollbar-width: thin;">
+                    {% for img in product.images %}
+                    <img src="{{ img }}" 
+                         class="rounded-3 border cursor-pointer opacity-hover transition-all" 
+                         style="width: 70px; height: 70px; object-fit: cover; cursor: pointer;"
+                         onclick="changeImage(this.src)"
+                         onmouseover="changeImage(this.src)">
+                    {% endfor %}
                 </div>
                 {% endif %}
             </div>
         </div>
 
-        <div class="col-md-6">
-            <h1 class="mb-3">{{ product.name }}</h1>
-            
-            <div class="mb-4">
-                <span class="h3 fw-bold text-primary ms-2">{{ product.price|intcomma }} ریال</span>
-                <span class="text-muted">({{ product.get_price_in_toman|intcomma }} تومان)</span>
+        <div class="col-lg-7 d-flex flex-column">
+            <div>
+                <h1 class="fw-bolder mb-3 text-dark">{{ product.name }}</h1>
+                
+                <div class="d-flex align-items-center mb-4 border-bottom pb-4">
+                    <h2 class="text-primary fw-bold mb-0 ms-4">
+                        <span id="display-price">{{ product.base_price|intcomma }}</span>
+                        <span class="fs-6 text-muted fw-normal">تومان</span>
+                    </h2>
+                    
+                    {% if product.total_stock == 0 and not unique_colors %}
+                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill px-3 py-2">
+                            <i class="bi bi-x-circle me-1"></i> ناموجود
+                        </span>
+                    {% else %}
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3 py-2">
+                            <i class="bi bi-check-circle me-1"></i> موجود
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4 text-secondary lh-lg">
+                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-text-paragraph me-2"></i>توضیحات:</h6>
+                    {{ product.description|linebreaks }}
+                </div>
             </div>
 
-            <div class="mb-4">
-                <h5>مشخصات:</h5>
-                <ul class="list-unstyled">
-                    {% if product.brand %}<li><strong>برند:</strong> {{ product.brand }}</li>{% endif %}
-                    {% if product.size %}<li><strong>سایز:</strong> {{ product.size }}</li>{% endif %}
-                    {% if product.color %}<li><strong>رنگ:</strong> {{ product.color }}</li>{% endif %}
-                    {% if product.material %}<li><strong>جنس:</strong> {{ product.material }}</li>{% endif %}
-                    <li><strong>فروشگاه:</strong> <a href="{% url 'shop-store' product.shop.slug %}">{{ product.shop.shop_name }}</a></li>
-                </ul>
-            </div>
-
-            <div class="mb-4">
-                <h5>توضیحات:</h5>
-                <p class="text-muted">{{ product.description|linebreaks }}</p>
-            </div>
-
-            <div class="card bg-light border-0">
-                <div class="card-body">
-                    {% if product.is_in_stock %}
-                    <form method="post" action="" class="row g-3 align-items-end">
+            <div class="mt-auto">
+                <div class="card bg-light border-0 rounded-4 p-4">
+                    <form id="add-to-cart-form">
                         {% csrf_token %}
-                        <div class="col-4">
-                            <label for="quantity" class="form-label">تعداد</label>
-                            <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1" max="{{ product.stock }}">
+                        
+                        <input type="hidden" name="variant_id" id="selected-variant-id">
+
+                        {% if unique_colors %}
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-bold small text-muted">رنگ:</label>
+                                <select id="color-select" class="form-select bg-white">
+                                    <option value="" selected disabled>انتخاب کنید...</option>
+                                    {% for color in unique_colors %}
+                                        <option value="{{ color }}">{{ color }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-6">
+                                <label class="form-label fw-bold small text-muted">سایز:</label>
+                                <select id="size-select" class="form-select bg-white">
+                                    <option value="" selected disabled>انتخاب کنید...</option>
+                                    {% for size in unique_sizes %}
+                                        <option value="{{ size }}">{{ size }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                         </div>
-                        <div class="col-8">
-                            <button type="submit" class="btn btn-primary w-100">افزودن به سبد خرید</button>
+                        
+                        <div id="stock-message" class="alert py-2 mb-3 d-none small"></div>
+                        {% endif %}
+
+                        <div class="row g-3 align-items-end">
+                            <div class="col-sm-4 col-md-3">
+                                <label class="form-label fw-bold small text-muted">تعداد:</label>
+                                <div class="input-group">
+                                    <button type="button" class="btn btn-white border bg-white" onclick="updateQty(-1)">-</button>
+                                    
+                                    <input type="number" 
+                                           id="qty-input" 
+                                           name="quantity" 
+                                           class="form-control text-center bg-white fs-5 fw-bold" 
+                                           value="1" 
+                                           min="1" 
+                                           max="50"
+                                           autocomplete="off">
+                                           
+                                    <button type="button" class="btn btn-white border bg-white" onclick="updateQty(1)">+</button>
+                                </div>
+                            </div>
+                            
+                            <div class="col-sm-8 col-md-9">
+                                <button type="button" 
+                                        id="buy-now-btn"
+                                        class="btn btn-success w-100 py-2 h-100 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm transition-all hover-shadow"
+                                        hx-post="/api/cart/add/{{ product.id }}/"
+                                        hx-include="#add-to-cart-form"
+                                        hx-swap="none"
+                                        hx-on::after-request="window.location.href='/shop/{{ shop.slug }}/checkout/'"
+                                        {% if unique_colors %}disabled{% endif %}>
+                                    <i class="bi bi-credit-card-2-front fs-5"></i>
+                                    <span>تکمیل خرید</span>
+                                </button>
+                            </div>
                         </div>
                     </form>
-                    <small class="text-muted mt-2 d-block">موجودی در انبار: {{ product.stock }} عدد</small>
-                    {% else %}
-                    <button class="btn btn-secondary w-100" disabled>ناموجود</button>
-                    {% endif %}
+                </div>
+
+                <div class="d-flex justify-content-center gap-4 mt-4 text-muted small">
+                    <span class="d-flex align-items-center gap-1"><i class="bi bi-shield-check text-success fs-5"></i> ضمانت سلامت کالا</span>
+                    <span class="d-flex align-items-center gap-1"><i class="bi bi-truck text-primary fs-5"></i> ارسال سریع</span>
                 </div>
             </div>
         </div>
     </div>
+
+    {% if related_products %}
+    <div class="mt-5">
+        <h4 class="fw-bold mb-4">محصولات مشابه</h4>
+        <div class="row row-cols-2 row-cols-md-4 g-4">
+            {% for rel in related_products %}
+            <div class="col">
+                <div class="card h-100 border-0 shadow-sm rounded-4">
+                    <img src="{{ rel.images.0 }}" class="card-img-top rounded-top-4" style="height: 200px; object-fit: cover;">
+                    <div class="card-body">
+                        <h6 class="card-title fw-bold">{{ rel.name }}</h6>
+                        <a href="/shop/{{ shop.slug }}/product/{{ rel.id }}/" class="btn btn-sm btn-outline-primary w-100 mt-2">مشاهده</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 </div>
+
+<script>
+    function changeImage(src) {
+        document.getElementById('main-image').src = src;
+    }
+    
+    function updateQty(change) {
+        const input = document.getElementById('qty-input');
+        let val = parseInt(input.value);
+        if (isNaN(val)) val = 1;
+        val += change;
+        if (val < 1) val = 1;
+        if (val > 50) val = 50;
+        input.value = val;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.getElementById('qty-input');
+        if (!input.value || isNaN(parseInt(input.value))) {
+            input.value = 1;
+        }
+    });
+
+    const variantsJson = '{{ variants_json|escapejs }}';
+    const variants = variantsJson ? JSON.parse(variantsJson) : [];
+    
+    const basePriceStr = '{{ product.base_price|default:0 }}';
+    const basePrice = parseFloat(basePriceStr);
+    
+    const colorSelect = document.getElementById('color-select');
+    const sizeSelect = document.getElementById('size-select');
+    const variantInput = document.getElementById('selected-variant-id');
+    
+    // فقط دکمه تکمیل خرید باقی مانده است
+    const buyNowBtn = document.getElementById('buy-now-btn');
+    const stockMsg = document.getElementById('stock-message');
+    const priceDisplay = document.getElementById('display-price');
+
+    function checkAvailability() {
+        if (!colorSelect || !sizeSelect) return;
+
+        const selectedColor = colorSelect.value;
+        const selectedSize = sizeSelect.value;
+
+        // حالت پیش‌فرض: غیرفعال
+        buyNowBtn.disabled = true;
+        buyNowBtn.classList.remove('btn-success');
+        buyNowBtn.classList.add('btn-secondary'); // رنگ خاکستری برای غیرفعال
+        buyNowBtn.innerHTML = '<i class="bi bi-credit-card-2-front fs-5"></i> <span>تکمیل خرید</span>';
+        
+        stockMsg.classList.add('d-none');
+        stockMsg.classList.remove('alert-success', 'alert-danger');
+        variantInput.value = "";
+        
+        priceDisplay.innerText = basePrice.toLocaleString();
+
+        if (selectedColor && selectedSize) {
+            const found = variants.find(v => v.color === selectedColor && v.size === selectedSize);
+
+            if (found) {
+                const finalPrice = basePrice + found.price_adj;
+                priceDisplay.innerText = finalPrice.toLocaleString();
+
+                if (found.stock > 0) {
+                    // موجود است: فعال کردن دکمه
+                    buyNowBtn.disabled = false;
+                    buyNowBtn.classList.remove('btn-secondary');
+                    buyNowBtn.classList.add('btn-success');
+                    
+                    variantInput.value = found.id;
+                    
+                    stockMsg.innerText = `✓ موجود در انبار (${found.stock} عدد)`;
+                    stockMsg.classList.add('alert-success');
+                    stockMsg.classList.remove('d-none');
+                } else {
+                    // ناموجود
+                    buyNowBtn.innerHTML = '<span>ناموجود</span>';
+                    stockMsg.innerText = "این کالا با ویژگی‌های انتخاب شده ناموجود است.";
+                    stockMsg.classList.add('alert-danger');
+                    stockMsg.classList.remove('d-none');
+                }
+            } else {
+                // نامعتبر
+                buyNowBtn.innerHTML = '<span>نامعتبر</span>';
+                stockMsg.innerText = "این ترکیب رنگ و سایز وجود ندارد.";
+                stockMsg.classList.add('alert-danger');
+                stockMsg.classList.remove('d-none');
+            }
+        }
+    }
+
+    if (colorSelect) colorSelect.addEventListener('change', checkAvailability);
+    if (sizeSelect) sizeSelect.addEventListener('change', checkAvailability);
+</script>
 {% endblock %}
