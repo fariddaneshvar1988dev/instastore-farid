@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}ارتقای اشتراک | اینستاستور{% endblock %}
+
+{% block content %}
+<style>
+    /* استایل اختصاصی برای صفحه قیمت‌ها */
+    .pricing-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding-top: 2rem;
+    }
+    
+    .pricing-header h1 {
+        font-size: 2.5rem;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .pricing-header p {
+        color: #666;
+        font-size: 1.1rem;
+    }
+
+    .pricing-container {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 2rem;
+        padding-bottom: 4rem;
+    }
+
+    .pricing-card {
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        width: 300px;
+        padding: 2rem;
+        text-align: center;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #eee;
+    }
+
+    .pricing-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+        border-color: #007bff;
+    }
+
+    /* هایلایت کردن پلن پیشنهادی یا خاص */
+    .pricing-card.featured {
+        border: 2px solid #007bff;
+        transform: scale(1.05);
+    }
+    
+    .pricing-card.featured:hover {
+        transform: scale(1.05) translateY(-5px);
+    }
+
+    .badge-featured {
+        background: #007bff;
+        color: #fff;
+        padding: 5px 30px;
+        position: absolute;
+        top: 20px;
+        right: -35px;
+        transform: rotate(45deg);
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    .plan-name {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 1rem;
+    }
+
+    .plan-price {
+        font-size: 2rem;
+        color: #007bff;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+    }
+    
+    .plan-price small {
+        font-size: 1rem;
+        color: #888;
+        font-weight: normal;
+    }
+
+    .plan-duration {
+        color: #666;
+        margin-bottom: 2rem;
+        font-size: 0.9rem;
+    }
+
+    .plan-features {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 2rem 0;
+        text-align: right;
+    }
+
+    .plan-features li {
+        padding: 10px 0;
+        border-bottom: 1px solid #f5f5f5;
+        color: #555;
+        font-size: 0.95rem;
+    }
+    
+    .plan-features li:last-child {
+        border-bottom: none;
+    }
+
+    .plan-features i {
+        color: #28a745;
+        margin-left: 10px;
+    }
+
+    .btn-plan {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: background 0.2s;
+        cursor: pointer;
+    }
+
+    .btn-primary-plan {
+        background: #007bff;
+        color: #fff;
+        border: none;
+    }
+
+    .btn-primary-plan:hover {
+        background: #0056b3;
+        color: #fff;
+    }
+
+    .btn-current {
+        background: #e9ecef;
+        color: #6c757d;
+        cursor: default;
+        border: 1px solid #ced4da;
+    }
+</style>
+
+<div class="container">
+    <div class="pricing-header">
+        <h1>پلن‌های اشتراک فروشگاه</h1>
+        <p>برای دسترسی به امکانات بیشتر و افزایش فروش، پلن خود را ارتقا دهید</p>
+    </div>
+
+    {% if messages %}
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-8">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show text-center" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="pricing-container">
+        {% for plan in plans %}
+            {% if shop.current_plan == plan and shop.is_subscription_active %}
+                <div class="pricing-card" style="opacity: 0.8; border: 2px solid #28a745;">
+            {% else %}
+                <div class="pricing-card {% if plan.code == 'pro' %}featured{% endif %}">
+            {% endif %}
+
+                {% if plan.code == 'pro' %}
+                    <div class="badge-featured">پیشنهادی</div>
+                {% endif %}
+
+                <div class="plan-name">{{ plan.name }}</div>
+                
+                <div class="plan-price">
+                    {{ plan.price|intcomma }} <small>تومان</small>
+                </div>
+                
+                <div class="plan-duration">{{ plan.days }} روزه</div>
+
+                <ul class="plan-features">
+                    <li>
+                        <i class="fas fa-check-circle"></i>
+                        {{ plan.max_products }} محصول قابل فروش
+                    </li>
+                    <li>
+                        <i class="fas fa-check-circle"></i>
+                        {{ plan.max_orders_per_month }} سفارش در ماه
+                    </li>
+                    <li>
+                        <i class="fas fa-check-circle"></i>
+                        پشتیبانی اختصاصی
+                    </li>
+                    <li>
+                        <i class="fas fa-check-circle"></i>
+                        درگاه پرداخت شخصی
+                    </li>
+                    {% if plan.description %}
+                    <li>
+                        <i class="fas fa-info-circle text-info"></i>
+                        {{ plan.description }}
+                    </li>
+                    {% endif %}
+                </ul>
+
+                {% if shop.current_plan == plan and shop.is_subscription_active %}
+                    <button class="btn-plan btn-current" disabled>
+                        <i class="fas fa-check"></i> پلن فعلی شما
+                    </button>
+                    <small class="d-block mt-2 text-muted">
+                        انقضا: {{ shop.plan_expires_at|date:"j F Y" }}
+                    </small>
+                {% else %}
+                    <a href="{% url 'start-payment' plan.id %}" class="btn-plan btn-primary-plan">
+                        انتخاب و پرداخت آنلاین
+                    </a>
+                {% endif %}
+
+            </div>
+        {% empty %}
+            <div class="alert alert-warning">
+                در حال حاضر پلنی برای نمایش وجود ندارد. لطفاً با پشتیبانی تماس بگیرید.
+            </div>
+        {% endfor %}
+    </div>
+    
+    <div class="text-center mb-5">
+        <p class="text-muted">
+            <small>تمامی پرداخت‌ها از طریق درگاه امن زرین‌پال انجام می‌شود.</small>
+        </p>
+        <a href="{% url 'seller-dashboard' %}" class="btn btn-outline-secondary">
+            بازگشت به داشبورد
+        </a>
+    </div>
+</div>
+{% endblock %}

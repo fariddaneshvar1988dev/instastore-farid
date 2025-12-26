@@ -8,110 +8,41 @@
         <div class="col-md-8">
             <div class="card shadow border-0 rounded-4">
                 <div class="card-header bg-primary text-white py-3 rounded-top-4">
-                    <h5 class="mb-0 fw-bold">
-                        {% if form.instance.pk %}
-                            <i class="bi bi-pencil-square"></i> ویرایش محصول: {{ form.instance.name }}
-                        {% else %}
-                            <i class="bi bi-plus-circle"></i> افزودن محصول جدید
-                        {% endif %}
-                    </h5>
+                    <h5 class="mb-0 fw-bold">{% if form.instance.pk %}<i class="bi bi-pencil-square"></i> ویرایش محصول: {{ form.instance.name }}{% else %}<i class="bi bi-plus-circle"></i> افزودن محصول جدید{% endif %}</h5>
                 </div>
                 <div class="card-body p-4">
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
-                        
                         {% if form.errors %}
-                        <div class="alert alert-danger">
-                            لطفاً خطاهای زیر را برطرف کنید:
-                            <ul class="mb-0 small">
-                            {% for field in form %}
-                                {% for error in field.errors %}
-                                    <li>{{ field.label }}: {{ error }}</li>
-                                {% endfor %}
-                            {% endfor %}
-                            </ul>
-                        </div>
+                        <div class="alert alert-danger"><ul class="mb-0 small">{% for field in form %}{% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}{% endfor %}</ul></div>
                         {% endif %}
-
                         <div class="row g-3">
-                            <div class="col-md-12">
-                                <label class="form-label">نام محصول *</label>
-                                {{ form.name }}
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">دسته‌بندی *</label>
-                                {{ form.category }}
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">قیمت پایه (تومان) *</label>
-                                {{ form.base_price }}
-                            </div>
-
-                            <div class="col-md-4">
-                                <label class="form-label">موجودی اولیه *</label>
-                                {{ form.initial_stock }}
-                                <div class="form-text small">تعداد موجود در انبار</div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <label class="form-label">سایز *</label>
-                                {{ form.initial_size }}
-                                <div class="form-text small">مثال: XL, 42, Large</div>
-                            </div>
-                            
-                            <div class="col-md-4">
-                                <label class="form-label">رنگ *</label>
-                                {{ form.initial_color }}
-                                <div class="form-text small">مثال: قرمز, مشکی</div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">برند</label>
-                                {{ form.brand }}
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">جنس پارچه</label>
-                                {{ form.material }}
-                            </div>
-
-                            <div class="col-12">
-                                <label class="form-label">توضیحات محصول</label>
-                                {{ form.description }}
-                            </div>
-
+                            <div class="col-md-12"><label class="form-label">نام محصول *</label>{{ form.name }}</div>
+                            <div class="col-md-6"><label class="form-label">دسته‌بندی *</label>{{ form.category }}</div>
+                            <div class="col-md-6"><label class="form-label">قیمت پایه (تومان) *</label>{{ form.base_price }}</div>
+                            <div class="col-md-4"><label class="form-label">موجودی اولیه *</label>{{ form.initial_stock }}<div class="form-text small">تعداد موجود در انبار</div></div>
+                            <div class="col-md-4"><label class="form-label">سایز *</label>{{ form.initial_size }}<div class="form-text small">مثال: XL, 42, Large</div></div>
+                            <div class="col-md-4"><label class="form-label">رنگ *</label>{{ form.initial_color }}<div class="form-text small">مثال: قرمز, مشکی</div></div>
+                            <div class="col-md-6"><label class="form-label">برند</label>{{ form.brand }}</div>
+                            <div class="col-md-6"><label class="form-label">جنس پارچه</label>{{ form.material }}</div>
+                            <div class="col-12"><label class="form-label">توضیحات محصول</label>{{ form.description }}</div>
                             <div class="col-12 border-top pt-3 mt-2">
                                 <h6 class="mb-3 fw-bold text-muted">تصاویر محصول</h6>
                                 <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <label class="form-label small">تصویر اصلی</label>
-                                        {{ form.image1 }}
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label small">تصویر دوم</label>
-                                        {{ form.image2 }}
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label small">تصویر سوم</label>
-                                        {{ form.image3 }}
-                                    </div>
+                                    <div class="col-md-4"><label class="form-label small">تصویر اصلی</label>{{ form.image1 }}</div>
+                                    <div class="col-md-4"><label class="form-label small">تصویر دوم</label>{{ form.image2 }}</div>
+                                    <div class="col-md-4"><label class="form-label small">تصویر سوم</label>{{ form.image3 }}</div>
                                 </div>
                             </div>
-
                             <div class="col-12 mt-3">
                                 <div class="form-check form-switch p-3 bg-light rounded-3">
                                     {{ form.is_active }}
-                                    <label class="form-check-label ms-2" for="{{ form.is_active.id_for_label }}">
-                                        انتشار محصول در فروشگاه (فعال)
-                                    </label>
+                                    <label class="form-check-label ms-2" for="{{ form.is_active.id_for_label }}">انتشار محصول در فروشگاه (فعال)</label>
                                 </div>
                             </div>
                         </div>
-
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4 pt-3 border-top">
-                            <a href="{% url 'seller-products' %}" class="btn btn-light me-md-2 border">انصراف</a>
+                            <a href="{% url 'frontend:seller-products' %}" class="btn btn-light me-md-2 border">انصراف</a>
                             <button type="submit" class="btn btn-primary px-5 fw-bold">ذخیره محصول</button>
                         </div>
                     </form>

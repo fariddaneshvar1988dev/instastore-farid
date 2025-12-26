@@ -1,89 +1,53 @@
 {% extends 'base.html' %}
 
-{% block title %}ثبت‌نام فروشگاه - InstaStore{% endblock %}
+{% block title %}ثبت‌نام فروشنده | اینستاستور{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-8 col-lg-6">
-        <div class="card shadow border-0 rounded-4">
-            <div class="card-body p-5">
-                <h3 class="card-title text-center mb-4 fw-bold text-primary">
-                    <i class="bi bi-shop"></i> ساخت فروشگاه جدید
-                </h3>
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <h3 class="text-center mb-4">ساخت فروشگاه جدید</h3>
                 
-                <form method="POST" action="{% url 'register-page' %}">
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        لطفاً خطاهای زیر را برطرف کنید:
+                        {{ form.non_field_errors }}
+                        <ul>
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                <form method="post" novalidate>
                     {% csrf_token %}
                     
-                    {% if form.errors %}
-                        <div class="alert alert-danger">
-                            لطفاً خطاهای فرم را بررسی کنید.
-                        </div>
-                    {% endif %}
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">نام کاربری (انگلیسی)</label>
-                            {{ form.username }}
-                            <div class="text-danger small">{{ form.username.errors }}</div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">ایمیل</label>
-                            {{ form.email }}
-                            <div class="text-danger small">{{ form.email.errors }}</div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">نام فروشگاه (فارسی)</label>
-                            {{ form.shop_name }}
-                            <div class="text-danger small">{{ form.shop_name.errors }}</div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">آدرس انگلیسی فروشگاه</label>
-                            {{ form.shop_slug }}
-                            <div class="text-muted small" style="font-size: 0.75rem">فقط حروف انگلیسی و عدد</div>
-                            <div class="text-danger small">{{ form.shop_slug.errors }}</div>
-                        </div>
-                    </div>
-
+                    {% for field in form %}
                     <div class="mb-3">
-                        <label class="form-label">آیدی اینستاگرام (انگلیسی)</label>
-                        <div class="input-group" dir="ltr">
-                            <span class="input-group-text">@</span>
-                            {{ form.instagram_username }}
-                        </div>
-                        <div class="text-danger small">{{ form.instagram_username.errors }}</div>
+                        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <div class="form-text text-muted">{{ field.help_text }}</div>
+                        {% endif %}
                     </div>
+                    {% endfor %}
 
-                    <div class="alert alert-light border">
-                        <div class="row">
-                            <div class="col-md-12">
-                                {% for field in form %}
-                                    {% if "pass" in field.name %}
-                                        <div class="mb-3">
-                                            <label class="form-label">{{ field.label }}</label>
-                                            <input type="password" name="{{ field.name }}" class="form-control" dir="ltr" required>
-                                            <div class="text-danger small">{{ field.errors }}</div>
-                                            {% if field.help_text %}
-                                                <small class="text-muted d-block">{{ field.help_text|safe }}</small>
-                                            {% endif %}
-                                        </div>
-                                    {% endif %}
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg fw-bold">
-                            ثبت‌نام و ورود به داشبورد
-                        </button>
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">ثبت و ساخت فروشگاه</button>
                     </div>
                 </form>
+
+                <hr class="my-4">
                 
-                <div class="text-center mt-3">
-                    <a href="{% url 'login' %}" class="text-decoration-none">قبلاً ثبت‌نام کرده‌اید؟ ورود</a>
+                <div class="text-center">
+                    <p class="text-muted">قبلاً ثبت‌نام کرده‌اید؟</p>
+                    <a href="{% url 'frontend:login' %}" class="btn btn-outline-secondary btn-sm">
+                        ورود به پنل مدیریت
+                    </a>
                 </div>
             </div>
         </div>

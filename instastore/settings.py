@@ -165,3 +165,9 @@ LOGGING = {
         },
     },
 }
+
+
+
+# تنظیمات درگاه پرداخت
+# این کد تست زرین‌پال است. برای نسخه واقعی باید کد اختصاصی خود را بگیرید
+ZARINPAL_MERCHANT_ID = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'

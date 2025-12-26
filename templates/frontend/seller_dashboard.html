@@ -11,10 +11,10 @@
             <p class="text-muted mb-0 small">به پنل مدیریت «{{ shop.shop_name }}» خوش آمدید.</p>
         </div>
         <div class="d-flex gap-2">
-            <a href="{% url 'shop-store' shop.slug %}" class="btn btn-outline-primary" target="_blank">
+            <a href="{% url 'frontend:shop-store' shop.slug %}" class="btn btn-outline-primary" target="_blank">
                 <i class="bi bi-eye"></i> مشاهده فروشگاه من
             </a>
-            <a href="{% url 'seller-product-create' %}" class="btn btn-primary shadow-sm">
+            <a href="{% url 'frontend:seller-product-add' %}" class="btn btn-primary shadow-sm">
                 <i class="bi bi-plus-lg"></i> افزودن محصول جدید
             </a>
         </div>
@@ -25,65 +25,48 @@
             <div class="card border-0 shadow-sm h-100 rounded-4">
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-2">
-                        <div class="bg-primary bg-opacity-10 p-2 rounded-3 text-primary me-2">
-                            <i class="bi bi-receipt fs-4"></i>
-                        </div>
+                        <div class="bg-primary bg-opacity-10 p-2 rounded-3 text-primary me-2"><i class="bi bi-receipt fs-4"></i></div>
                         <span class="text-muted small fw-bold">کل سفارشات</span>
                     </div>
                     <h3 class="fw-bold mb-0">{{ total_orders }}</h3>
                 </div>
             </div>
         </div>
-        
         <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm h-100 rounded-4 border-start border-4 border-warning">
                 <div class="card-body position-relative">
                     <div class="d-flex align-items-center mb-2">
-                        <div class="bg-warning bg-opacity-10 p-2 rounded-3 text-warning me-2">
-                            <i class="bi bi-hourglass-split fs-4"></i>
-                        </div>
+                        <div class="bg-warning bg-opacity-10 p-2 rounded-3 text-warning me-2"><i class="bi bi-hourglass-split fs-4"></i></div>
                         <span class="text-muted small fw-bold">در انتظار تایید</span>
                     </div>
                     <h3 class="fw-bold mb-0">{{ pending_orders }}</h3>
                     {% if pending_orders > 0 %}
-                    <a href="{% url 'seller-orders' %}?status=pending" class="stretched-link text-decoration-none small text-warning fw-bold mt-2 d-block">
-                        رسیدگی کنید &larr;
-                    </a>
+                    <a href="{% url 'frontend:seller-orders' %}?status=pending" class="stretched-link text-decoration-none small text-warning fw-bold mt-2 d-block">رسیدگی کنید &larr;</a>
                     {% endif %}
                 </div>
             </div>
         </div>
-
         <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm h-100 rounded-4">
                 <div class="card-body position-relative">
                     <div class="d-flex align-items-center mb-2">
-                        <div class="bg-success bg-opacity-10 p-2 rounded-3 text-success me-2">
-                            <i class="bi bi-tags fs-4"></i>
-                        </div>
+                        <div class="bg-success bg-opacity-10 p-2 rounded-3 text-success me-2"><i class="bi bi-tags fs-4"></i></div>
                         <span class="text-muted small fw-bold">محصولات فعال</span>
                     </div>
                     <h3 class="fw-bold mb-0">{{ total_products }}</h3>
-                    <a href="{% url 'seller-products' %}" class="stretched-link text-decoration-none small text-success mt-2 d-block">
-                        مدیریت &larr;
-                    </a>
+                    <a href="{% url 'frontend:seller-products' %}" class="stretched-link text-decoration-none small text-success mt-2 d-block">مدیریت &larr;</a>
                 </div>
             </div>
         </div>
-
         <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm h-100 rounded-4">
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-2">
-                        <div class="bg-danger bg-opacity-10 p-2 rounded-3 text-danger me-2">
-                            <i class="bi bi-exclamation-triangle fs-4"></i>
-                        </div>
+                        <div class="bg-danger bg-opacity-10 p-2 rounded-3 text-danger me-2"><i class="bi bi-exclamation-triangle fs-4"></i></div>
                         <span class="text-muted small fw-bold">کمبود موجودی</span>
                     </div>
                     <h3 class="fw-bold mb-0">{{ low_stock_products }}</h3>
-                    {% if low_stock_products > 0 %}
-                    <small class="text-danger">نیاز به شارژ انبار</small>
-                    {% endif %}
+                    {% if low_stock_products > 0 %}<small class="text-danger">نیاز به شارژ انبار</small>{% endif %}
                 </div>
             </div>
         </div>
@@ -92,60 +75,30 @@
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-bold fs-6">🛒 آخرین سفارشات ثبت شده</h5>
-            <a href="{% url 'seller-orders' %}" class="btn btn-sm btn-light rounded-pill px-3">مشاهده همه</a>
+            <a href="{% url 'frontend:seller-orders' %}" class="btn btn-sm btn-light rounded-pill px-3">مشاهده همه</a>
         </div>
         <div class="table-responsive">
             <table class="table align-middle mb-0 table-hover">
-                <thead class="table-light text-muted small">
-                    <tr>
-                        <th>شماره</th>
-                        <th>مشتری</th>
-                        <th>مبلغ کل</th>
-                        <th>وضعیت</th>
-                        <th>زمان</th>
-                        <th></th>
-                    </tr>
-                </thead>
+                <thead class="table-light text-muted small"><tr><th>شماره</th><th>مشتری</th><th>مبلغ کل</th><th>وضعیت</th><th>زمان</th><th></th></tr></thead>
                 <tbody>
                     {% for order in recent_orders %}
                     <tr>
                         <td class="fw-bold text-primary">#{{ order.order_id }}</td>
-                        <td>
-                            <div class="d-flex flex-column">
-                                <span class="fw-bold">{{ order.customer_name|default:"کاربر مهمان" }}</span>
-                                <span class="text-muted small" style="font-size: 0.75rem;">{{ order.customer_phone }}</span>
-                            </div>
-                        </td>
+                        <td><div class="d-flex flex-column"><span class="fw-bold">{{ order.customer_name|default:"کاربر مهمان" }}</span><span class="text-muted small">{{ order.customer_phone }}</span></div></td>
                         <td>{{ order.total_amount|intcomma }} <span class="small text-muted">تومان</span></td>
                         <td>
-                            {% if order.status == 'pending' %}
-                                <span class="badge bg-warning text-dark rounded-pill">در انتظار</span>
-                            {% elif order.status == 'confirmed' %}
-                                <span class="badge bg-info rounded-pill">تایید شده</span>
-                            {% elif order.status == 'shipped' %}
-                                <span class="badge bg-primary rounded-pill">ارسال شده</span>
-                            {% elif order.status == 'delivered' %}
-                                <span class="badge bg-success rounded-pill">تحویل شده</span>
-                            {% elif order.status == 'cancelled' %}
-                                <span class="badge bg-danger rounded-pill">لغو شده</span>
-                            {% else %}
-                                <span class="badge bg-secondary rounded-pill">{{ order.get_status_display }}</span>
-                            {% endif %}
+                            {% if order.status == 'pending' %}<span class="badge bg-warning text-dark rounded-pill">در انتظار</span>
+                            {% elif order.status == 'confirmed' %}<span class="badge bg-info rounded-pill">تایید شده</span>
+                            {% elif order.status == 'shipped' %}<span class="badge bg-primary rounded-pill">ارسال شده</span>
+                            {% elif order.status == 'delivered' %}<span class="badge bg-success rounded-pill">تحویل شده</span>
+                            {% elif order.status == 'cancelled' %}<span class="badge bg-danger rounded-pill">لغو شده</span>
+                            {% else %}<span class="badge bg-secondary rounded-pill">{{ order.get_status_display }}</span>{% endif %}
                         </td>
                         <td class="text-muted small">{{ order.created_at|date:"Y/m/d H:i" }}</td>
-                        <td class="text-end">
-                            <a href="{% url 'seller-order-detail' order.pk %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                                جزئیات
-                            </a>
-                        </td>
+                        <td class="text-end"><a href="{% url 'frontend:seller-order-detail' order.pk %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">جزئیات</a></td>
                     </tr>
                     {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">
-                            <i class="bi bi-inbox fs-1 d-block mb-3 opacity-25"></i>
-                            هنوز هیچ سفارشی ثبت نشده است.
-                        </td>
-                    </tr>
+                    <tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-3 opacity-25"></i>هنوز هیچ سفارشی ثبت نشده است.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
