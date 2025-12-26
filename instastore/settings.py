@@ -1,6 +1,6 @@
 """
 Django settings for instastore project.
-Corrected and Optimized.
+Corrected and Optimized for Local Development.
 """
 
 from pathlib import Path
@@ -10,18 +10,16 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# در محیط واقعی (Production) حتما این کلید را از متغیرهای محیطی بخوانید
 SECRET_KEY = 'django-insecure-*5i11fm+znb48@%q&^@a#+^dbt(h5kllya00ny^%wrl81xnxec'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# برای دیپلوی نهایی مقدار زیر را False کنید
 DEBUG = True
 
-# تغییر مهم: اضافه کردن '*' برای دسترسی از همه آدرس‌ها (برای محیط توسعه)
+# اجازه دسترسی از همه آدرس‌ها (برای محیط توسعه)
 ALLOWED_HOSTS = ['*']
 
-# Application definition
 
+# Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -29,15 +27,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # کتابخانه کمکی برای نمایش خوانای اعداد (سه رقم سه رقم)
+    # کتابخانه کمکی برای نمایش خوانای اعداد
     'django.contrib.humanize', 
+    
+    # Third-party apps
     'rest_framework',
+    'django_filters',
+    'drf_yasg',
+    
+    # Local apps
     'shops',
     'customers',
     'orders',
     'products',
-    'django_filters',
-    'drf_yasg',
     'frontend',
 ]
 
@@ -49,6 +51,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # میدل‌ور اختصاصی فروشگاه
     'shops.middleware.ShopMiddleware',
 ]
 
@@ -64,6 +67,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                # کانتکست پروسسور سبد خرید
                 'frontend.context_processors.cart_context',
             ],
         },
@@ -71,6 +75,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'instastore.wsgi.application'
+
 
 # Database
 DATABASES = {
@@ -80,6 +85,7 @@ DATABASES = {
     }
 }
 
+
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     { 'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
@@ -88,40 +94,42 @@ AUTH_PASSWORD_VALIDATORS = [
     { 'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', },
 ]
 
+
 # Internationalization
 LANGUAGE_CODE = 'fa-ir'
 TIME_ZONE = 'Asia/Tehran'
 USE_I18N = True
 USE_TZ = True
 
+
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
+
+# تنظیمات فایل‌های آپلودی (Media)
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-MEDIA_URL = '/media/'  # این خط برای دسترسی به فایل‌های مدیا ضروری است
+MEDIA_URL = '/media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
+# --- تنظیمات احراز هویت ---
 # مسیر هدایت پس از ورود موفق
 LOGIN_REDIRECT_URL = 'seller-dashboard'
 # مسیر هدایت پس از خروج
 LOGOUT_REDIRECT_URL = 'home'
-# آدرس صفحه لاگین (برای دکوریتور @login_required)
+# آدرس صفحه لاگین
 LOGIN_URL = 'login'
 
 
-
-# instastore/settings.py
-
-# ... (بقیه کدها)
-
-# Logging Configuration
-# instastore/settings.py
-
+# --- تنظیمات حیاتی برای رفع مشکل سبد خرید (Session & Cookies) ---
+# این بخش باعث می‌شود سبد خرید روی لوکال‌هاست درست کار کند
+SESSION_SAVE_EVERY_REQUEST = True  # ذخیره تغییرات سشن در هر درخواست
+SESSION_COOKIE_SECURE = False      # غیرفعال کردن امنیت HTTPS برای لوکال
+CSRF_COOKIE_SECURE = False         # غیرفعال کردن امنیت CSRF برای لوکال
+SESSION_COOKIE_AGE = 1209600       # عمر سشن (۲ هفته)
 
 
-# ... (سایر تنظیمات)
-
-# تنظیمات پیشرفته لاگینگ
+# --- تنظیمات لاگینگ (Logging) ---
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -129,10 +137,6 @@ LOGGING = {
         'standard': {
             'format': '[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s',
             'datefmt': '%d/%b/%Y %H:%M:%S'
-        },
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
         },
     },
     'handlers': {
@@ -157,7 +161,6 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True,
         },
-        # لاگر اختصاصی برای اپلیکیشن‌های خودمان
         'instastore': {
             'handlers': ['console', 'file'],
             'level': 'INFO',
@@ -165,3 +168,18 @@ LOGGING = {
         },
     },
 }
+# --- این خطوط را حتما به آخر فایل settings.py اضافه کنید ---
+
+# ۱. ذخیره سشن در هر بار درخواست (برای جلوگیری از پریدن سبد خرید)
+SESSION_SAVE_EVERY_REQUEST = True
+
+# ۲. تنظیمات کوکی برای کار روی لوکال هاست (بسیار مهم)
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_HTTPONLY = True
+
+# ۳. عمر سشن (مثلا ۲ هفته)
+SESSION_COOKIE_AGE = 1209600 
+
+# ۴. انجین سشن
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'

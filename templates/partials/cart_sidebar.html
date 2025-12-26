@@ -1,0 +1,73 @@
+{% load humanize %}
+
+<div class="offcanvas-header border-bottom bg-light">
+    <h5 class="offcanvas-title fw-bold">سبد خرید <span class="badge bg-danger rounded-pill">{{ cart_total_count }}</span></h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+</div>
+
+<div class="offcanvas-body p-0">
+    {% if cart %}
+        <div class="d-flex flex-column h-100">
+            <div class="flex-grow-1 overflow-auto p-3">
+                
+                {% for key, item in cart.items %}
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body p-2 d-flex align-items-center">
+                        
+                        <a href="/shop/{{ item.shop_slug }}/product/{{ item.product_id }}/" class="flex-shrink-0 ms-3">
+                            {% if item.image %}
+                                <img src="{{ item.image }}" class="rounded-3 border" style="width: 60px; height: 60px; object-fit: cover;">
+                            {% else %}
+                                <div class="bg-light rounded-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                    <i class="bi bi-image text-muted"></i>
+                                </div>
+                            {% endif %}
+                        </a>
+                        
+                        <div class="flex-grow-1">
+                            <a href="/shop/{{ item.shop_slug }}/product/{{ item.product_id }}/" class="text-decoration-none text-dark">
+                                <h6 class="mb-1 fw-bold small text-truncate" style="max-width: 150px;">{{ item.name }}</h6>
+                            </a>
+                            
+                            {% if item.variant_id %}
+                                <div class="text-muted small mb-1" style="font-size: 0.75rem;">
+                                    {{ item.color }} | {{ item.size }}
+                                </div>
+                            {% endif %}
+                            
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="text-primary fw-bold small">{{ item.price|intcomma }}</span>
+                                <span class="badge bg-light text-dark border">{{ item.quantity }}x</span>
+                            </div>
+                        </div>
+
+                        <div class="ms-2">
+                            <button class="btn btn-sm btn-outline-danger border-0 bg-danger bg-opacity-10"
+                                    hx-post="/api/cart/remove/{{ key }}/"
+                                    hx-target="#cart-sidebar"
+                                    hx-swap="innerHTML"
+                                    title="حذف از سبد">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="border-top p-3 bg-light mt-auto">
+                <div class="d-flex justify-content-between fw-bold mb-3">
+                    <span>جمع کل:</span>
+                    <span class="text-primary">{{ cart_total_price|intcomma }} تومان</span>
+                </div>
+                <a href="/shop/{{ shop_slug }}/checkout/" class="btn btn-primary w-100">تکمیل خرید</a>
+            </div>
+        </div>
+    {% else %}
+        <div class="h-100 d-flex flex-column align-items-center justify-content-center text-muted">
+            <i class="bi bi-basket display-1 mb-3 opacity-50"></i>
+            <p>سبد خرید خالی است</p>
+        </div>
+    {% endif %}
+</div>

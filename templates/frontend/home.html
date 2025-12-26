@@ -1,104 +1,144 @@
 {% extends 'base.html' %}
 
-{% block title %}InstaStore - پیدا کردن فروشگاه اینستاگرامی{% endblock %}
+{% block title %}InstaStore - تبدیل پیج اینستاگرام به فروشگاه حرفه‌ای{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        padding: 100px 0;
+        color: white;
+        border-radius: 0 0 50px 50px;
+        margin-bottom: 60px;
+    }
+    
+    .feature-card {
+        border: none;
+        border-radius: 20px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        background: white;
+        height: 100%;
+        padding: 2rem;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+    
+    .icon-box {
+        width: 80px;
+        height: 80px;
+        border-radius: 20px;
+        background: rgba(99, 102, 241, 0.1);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .cta-btn {
+        padding: 15px 40px;
+        font-size: 1.1rem;
+        border-radius: 50px;
+        font-weight: bold;
+        transition: all 0.3s;
+    }
+    
+    .cta-btn:hover {
+        transform: scale(1.05);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="text-center mb-5">
-    <h1 class="display-4 mb-3">🛍️ فروشگاه اختصاصی پیج اینستاگرام شما</h1>
-    <p class="lead text-muted">لینک فروشگاه خود را دریافت کنید و مستقیم از اینستاگرام بفروشید</p>
-    
-    <!-- جستجوی فروشگاه -->
-    <div class="row justify-content-center mt-4">
-        <div class="col-md-6">
-            <div class="input-group">
-                <input type="text" 
-                       class="form-control" 
-                       placeholder="نام کاربری اینستاگرام (مثال: @jadeh_poshak)"
-                       id="shop-search">
-                <button class="btn btn-primary" onclick="searchShop()">
-                    <i class="bi bi-search"></i> پیدا کن
-                </button>
-            </div>
-            <div class="mt-2 text-muted small">
-                یا لینک مستقیم فروشگاه خود را وارد کنید
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- فروشگاه‌های پرطرفدار -->
-<h3 class="mb-4">✨ فروشگاه‌های فعال</h3>
-<div class="row" id="featured-shops">
-    {% for shop in featured_shops %}
-    <div class="col-md-4 col-lg-3 mb-4">
-        <div class="card shop-card h-100 text-center">
-            <div class="card-body">
-                <div class="mb-3">
-                    <i class="bi bi-shop-window fs-1 text-primary"></i>
+<section class="hero-section text-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <span class="badge bg-white text-primary mb-3 px-3 py-2 rounded-pill">
+                    🚀 نسخه جدید اینستاستور
+                </span>
+                <h1 class="display-3 fw-bold mb-4">فروش در اینستاگرام،<br>ساده‌تر از همیشه</h1>
+                <p class="lead mb-5 opacity-75">
+                    بدون نیاز به دانش فنی، پیج اینستاگرام خود را به یک وب‌سایت فروشگاهی کامل تبدیل کنید. 
+                    لینک اختصاصی بسازید و مدیریت سفارشات را خودکار کنید.
+                </p>
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    <a href="/register/" class="btn btn-light cta-btn text-primary shadow-lg">
+                        <i class="bi bi-rocket-takeoff"></i> ساخت فروشگاه رایگان
+                    </a>
+                    <a href="/about/" class="btn btn-outline-light cta-btn">
+                        بیشتر بدانید
+                    </a>
                 </div>
-                <h5 class="card-title">{{ shop.shop_name }}</h5>
-                <p class="card-text text-muted small">{{ shop.instagram_username }}</p>
-                <a href="/shop/{{ shop.slug }}/" 
-                   class="btn btn-outline-primary btn-sm">
-                   مشاهده فروشگاه
-                </a>
             </div>
         </div>
     </div>
-    {% empty %}
-    <div class="col-12 text-center py-5">
-        <p class="text-muted">هنوز فروشگاهی ثبت نشده است.</p>
-        <a href="/register/" class="btn btn-primary">اولین فروشگاه باشید</a>
-    </div>
-    {% endfor %}
-</div>
+</section>
 
-<!-- اطلاعات برای صاحبان پیج -->
-<div class="row mt-5">
-    <div class="col-md-6">
-        <div class="card border-success">
-            <div class="card-body">
-                <h5 class="card-title text-success">
-                    <i class="bi bi-instagram"></i> برای صاحبان پیج
-                </h5>
-                <ul class="list-unstyled">
-                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> رایگان ثبت‌نام کنید</li>
-                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> لینک اختصاصی دریافت کنید</li>
-                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> در بیو اینستاگرام قرار دهید</li>
-                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> شروع به فروش کنید</li>
-                </ul>
-                <a href="/register/" class="btn btn-success">ثبت‌نام رایگان</a>
-            </div>
-        </div>
+<section class="container mb-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">چرا اینستاستور؟</h2>
+        <p class="text-muted">ابزارهایی که برای رشد فروشگاه اینستاگرامی خود نیاز دارید</p>
     </div>
     
-    <div class="col-md-6">
-        <div class="card border-primary">
-            <div class="card-body">
-                <h5 class="card-title text-primary">
-                    <i class="bi bi-cart-check"></i> برای مشتریان
-                </h5>
-                <ul class="list-unstyled">
-                    <li class="mb-2"><i class="bi bi-check-circle text-primary"></i> از پیج اینستاگرام وارد شوید</li>
-                    <li class="mb-2"><i class="bi bi-check-circle text-primary"></i> محصولات را ببینید</li>
-                    <li class="mb-2"><i class="bi bi-check-circle text-primary"></i> با چند کلیک خرید کنید</li>
-                    <li class="mb-2"><i class="bi bi-check-circle text-primary"></i> پیگیری سفارش</li>
-                </ul>
-                <p class="text-muted small">لینک فروشگاه را از پیج اینستاگرام مورد نظر دریافت کنید</p>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card feature-card shadow-sm">
+                <div class="card-body">
+                    <div class="icon-box">
+                        <i class="bi bi-link-45deg"></i>
+                    </div>
+                    <h4 class="card-title fw-bold mb-3">لینک اختصاصی در بایو</h4>
+                    <p class="card-text text-muted">
+                        به جای پاسخ دادن به دایرکت‌ها، لینک فروشگاه خود را در بایو بگذارید تا مشتریان به راحتی محصولات را ببینند و خرید کنند.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card feature-card shadow-sm">
+                <div class="card-body">
+                    <div class="icon-box">
+                        <i class="bi bi-clipboard-data"></i>
+                    </div>
+                    <h4 class="card-title fw-bold mb-3">مدیریت آسان سفارشات</h4>
+                    <p class="card-text text-muted">
+                        دیگر نیازی به نوشتن سفارشات در کاغذ نیست. تمام سفارشات با جزئیات کامل در پنل مدیریت شما ثبت می‌شوند.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card feature-card shadow-sm">
+                <div class="card-body">
+                    <div class="icon-box">
+                        <i class="bi bi-wallet2"></i>
+                    </div>
+                    <h4 class="card-title fw-bold mb-3">بدون کمیسیون</h4>
+                    <p class="card-text text-muted">
+                        ما در سود شما شریک نیستیم. تمام درآمد فروش متعلق به خودتان است و هیچ کارمزدی از تراکنش‌ها کسر نمی‌شود.
+                    </p>
+                </div>
             </div>
         </div>
     </div>
-</div>
+</section>
 
-<script>
-function searchShop() {
-    const username = document.getElementById('shop-search').value.trim();
-    if (username) {
-        // حذف @ از ابتدا اگر وجود دارد
-        const cleanUsername = username.replace('@', '');
-        // هدایت به صفحه فروشگاه
-        window.location.href = `/shop/${cleanUsername}/`;
-    }
-}
-</script>
+<section class="container my-5">
+    <div class="bg-dark text-white rounded-5 p-5 text-center" 
+         style="background-image: url('https://source.unsplash.com/random/1200x400/?abstract,dark'); background-size: cover; background-blend-mode: overlay;">
+        <h2 class="fw-bold mb-3">آماده شروع هستید؟</h2>
+        <p class="mb-4 text-light opacity-75">همین حالا به جمع فروشندگان موفق اینستاستور بپیوندید</p>
+        <a href="/register/" class="btn btn-primary btn-lg rounded-pill px-5">
+            شروع کنید
+        </a>
+    </div>
+</section>
+
 {% endblock %}
