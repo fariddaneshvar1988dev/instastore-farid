@@ -7,15 +7,10 @@ from shops.models import Shop
 
 # --- فرم ایجاد و ویرایش محصول ---
 class ProductForm(forms.ModelForm):
-    # فیلدهای آپلود تصویر
     image1 = forms.ImageField(label='تصویر اصلی', required=False, widget=forms.FileInput(attrs={'class': 'form-control'}))
     image2 = forms.ImageField(label='تصویر دوم', required=False, widget=forms.FileInput(attrs={'class': 'form-control'}))
     image3 = forms.ImageField(label='تصویر سوم', required=False, widget=forms.FileInput(attrs={'class': 'form-control'}))
 
-    # این فیلدها برای مدیریت سمت کلاینت (JS) هستند و در متد save ویو پردازش می‌شوند
-    # نیازی نیست در Meta.fields باشند، اما اینجا تعریف می‌کنیم تا در HTML رندر شوند
-    # توجه: required=False می‌کنیم تا فرم جنگو گیر ندهد (چون با JS پر می‌شوند)
-    
     class Meta:
         model = Product
         fields = ['name', 'category', 'base_price', 'brand', 'material', 'description', 'is_active']
@@ -46,6 +41,7 @@ class SellerRegisterForm(UserCreationForm):
 
     class Meta:
         model = User
+        # فیلدهای رمز عبور به صورت خودکار توسط UserCreationForm مدیریت می‌شوند
         fields = ['username', 'email', 'shop_name', 'shop_slug', 'instagram_username']
 
     def clean_shop_slug(self):
@@ -58,7 +54,6 @@ class SellerRegisterForm(UserCreationForm):
 class ShopSettingsForm(forms.ModelForm):
     class Meta:
         model = Shop
-        # فیلد banner حذف شد چون در مدل نیست
         fields = [
             'shop_name', 'bio', 'instagram_username', 'phone_number', 'address', 'logo',
             'enable_cod', 'enable_card_to_card', 'card_owner_name', 'card_number', 'shaba_number'
@@ -70,8 +65,6 @@ class ShopSettingsForm(forms.ModelForm):
             'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
             'address': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
             'logo': forms.FileInput(attrs={'class': 'form-control'}),
-            
-            # تنظیمات پرداخت
             'enable_cod': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'enable_card_to_card': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'card_owner_name': forms.TextInput(attrs={'class': 'form-control'}),

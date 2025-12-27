@@ -21,6 +21,16 @@
                         {% if form.errors %}
                             <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
                                 <i class="bi bi-exclamation-triangle-fill me-2"></i> لطفاً خطاهای زیر را برطرف کنید.
+                                <ul class="mb-0 mt-2">
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                        <li>{{ field.label }}: {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
                         {% endif %}
@@ -29,25 +39,16 @@
                             <div class="col-md-6">
                                 <label class="form-label text-muted small">نام کاربری (انگلیسی)</label>
                                 {{ form.username }}
-                                {% if form.username.errors %}
-                                    <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
-                                {% endif %}
                             </div>
 
                             <div class="col-md-6">
                                 <label class="form-label text-muted small">ایمیل</label>
                                 {{ form.email }}
-                                {% if form.email.errors %}
-                                    <div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>
-                                {% endif %}
                             </div>
 
                             <div class="col-12">
                                 <label class="form-label text-muted small">نام فروشگاه (فارسی)</label>
                                 {{ form.shop_name }}
-                                {% if form.shop_name.errors %}
-                                    <div class="text-danger small mt-1">{{ form.shop_name.errors.0 }}</div>
-                                {% endif %}
                             </div>
 
                             <div class="col-12">
@@ -56,10 +57,6 @@
                                     <span class="input-group-text bg-light">instastore.ir/shop/</span>
                                     {{ form.shop_slug }}
                                 </div>
-                                <div class="form-text small text-end">فقط حروف انگلیسی و خط تیره (-)</div>
-                                {% if form.shop_slug.errors %}
-                                    <div class="text-danger small mt-1 text-end">{{ form.shop_slug.errors.0 }}</div>
-                                {% endif %}
                             </div>
 
                             <div class="col-12">
@@ -68,9 +65,15 @@
                                     <span class="input-group-text bg-light"><i class="bi bi-instagram"></i></span>
                                     {{ form.instagram_username }}
                                 </div>
-                                {% if form.instagram_username.errors %}
-                                    <div class="text-danger small mt-1 text-end">{{ form.instagram_username.errors.0 }}</div>
-                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">رمز عبور</label>
+                                <input type="password" name="password1" class="form-control" dir="ltr" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">تکرار رمز عبور</label>
+                                <input type="password" name="password2" class="form-control" dir="ltr" required>
                             </div>
                         </div>
 
