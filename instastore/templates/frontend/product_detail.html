@@ -11,9 +11,12 @@
         -webkit-appearance: none; 
         margin: 0; 
     }
-    input[type=number] {
-        -moz-appearance: textfield;
-    }
+    input[type=number] { -moz-appearance: textfield; }
+    
+    .cursor-pointer { cursor: pointer; }
+    .opacity-hover:hover { opacity: 0.8; }
+    .transition-all { transition: all 0.2s ease; }
+    .hover-shadow:hover { box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important; }
 </style>
 {% endblock %}
 
@@ -22,7 +25,7 @@
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item">
-                <a href="/shop/{{ shop.slug }}/" class="text-decoration-none text-muted">
+                <a href="{% url 'frontend:shop-store' shop.slug %}" class="text-decoration-none text-muted">
                     <i class="bi bi-shop me-1"></i> فروشگاه {{ shop.shop_name }}
                 </a>
             </li>
@@ -30,7 +33,7 @@
         </ol>
     </nav>
 
-    <div class="row bg-white rounded-4 shadow-sm p-3 p-lg-4 border g-4">
+    <div class="row bg-white rounded-4 shadow-sm p-3 p-lg-4 border g-4 animate__animated animate__fadeIn">
         <div class="col-lg-5">
             <div class="position-relative mb-3">
                 {% if product.images %}
@@ -49,9 +52,8 @@
                     {% for img in product.images %}
                     <img src="{{ img }}" 
                          class="rounded-3 border cursor-pointer opacity-hover transition-all" 
-                         style="width: 70px; height: 70px; object-fit: cover; cursor: pointer;"
-                         onclick="changeImage(this.src)"
-                         onmouseover="changeImage(this.src)">
+                         style="width: 70px; height: 70px; object-fit: cover;"
+                         onclick="changeImage(this.src)">
                     {% endfor %}
                 </div>
                 {% endif %}
@@ -74,14 +76,14 @@
                         </span>
                     {% else %}
                         <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3 py-2">
-                            <i class="bi bi-check-circle me-1"></i> موجود
+                            <i class="bi bi-check-circle me-1"></i> موجود در انبار
                         </span>
                     {% endif %}
                 </div>
 
                 <div class="mb-4 text-secondary lh-lg">
-                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-text-paragraph me-2"></i>توضیحات:</h6>
-                    {{ product.description|linebreaks }}
+                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-text-paragraph me-2"></i>توضیحات محصول:</h6>
+                    <div class="ps-3 border-start border-3">{{ product.description|linebreaks }}</div>
                 </div>
             </div>
 
@@ -89,14 +91,13 @@
                 <div class="card bg-light border-0 rounded-4 p-4">
                     <form id="add-to-cart-form">
                         {% csrf_token %}
-                        
                         <input type="hidden" name="variant_id" id="selected-variant-id">
 
                         {% if unique_colors %}
                         <div class="row mb-3">
                             <div class="col-6">
-                                <label class="form-label fw-bold small text-muted">رنگ:</label>
-                                <select id="color-select" class="form-select bg-white">
+                                <label class="form-label fw-bold small text-muted">انتخاب رنگ:</label>
+                                <select id="color-select" class="form-select bg-white shadow-sm border-0">
                                     <option value="" selected disabled>انتخاب کنید...</option>
                                     {% for color in unique_colors %}
                                         <option value="{{ color }}">{{ color }}</option>
@@ -105,8 +106,8 @@
                             </div>
                             
                             <div class="col-6">
-                                <label class="form-label fw-bold small text-muted">سایز:</label>
-                                <select id="size-select" class="form-select bg-white">
+                                <label class="form-label fw-bold small text-muted">انتخاب سایز:</label>
+                                <select id="size-select" class="form-select bg-white shadow-sm border-0">
                                     <option value="" selected disabled>انتخاب کنید...</option>
                                     {% for size in unique_sizes %}
                                         <option value="{{ size }}">{{ size }}</option>
@@ -114,25 +115,17 @@
                                 </select>
                             </div>
                         </div>
-                        
                         <div id="stock-message" class="alert py-2 mb-3 d-none small"></div>
                         {% endif %}
 
                         <div class="row g-3 align-items-end">
                             <div class="col-sm-4 col-md-3">
                                 <label class="form-label fw-bold small text-muted">تعداد:</label>
-                                <div class="input-group">
+                                <div class="input-group shadow-sm">
                                     <button type="button" class="btn btn-white border bg-white" onclick="updateQty(-1)">-</button>
-                                    
-                                    <input type="number" 
-                                           id="qty-input" 
-                                           name="quantity" 
-                                           class="form-control text-center bg-white fs-5 fw-bold" 
-                                           value="1" 
-                                           min="1" 
-                                           max="50"
-                                           autocomplete="off">
-                                           
+                                    <input type="number" id="qty-input" name="quantity" 
+                                           class="form-control text-center bg-white fs-5 fw-bold border-start-0 border-end-0" 
+                                           value="1" min="1" max="50" readonly>
                                     <button type="button" class="btn btn-white border bg-white" onclick="updateQty(1)">+</button>
                                 </div>
                             </div>
@@ -140,13 +133,13 @@
                             <div class="col-sm-8 col-md-9">
                                 <button type="button" 
                                         id="buy-now-btn"
-                                        class="btn btn-primary w-100 py-2 h-100 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm transition-all hover-shadow"
-                                        hx-post="/api/cart/add/{{ product.id }}/"
+                                        class="btn btn-primary w-100 py-3 h-100 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm transition-all hover-shadow"
+                                        hx-post="{% url 'frontend:add-to-cart' product.id %}"
                                         hx-include="#add-to-cart-form"
-                                        hx-swap="none"
-                                        hx-on::after-request="alert('✅ محصول با موفقیت به سبد خرید اضافه شد!')"
+                                        hx-target="#cart-badge-count"
+                                        hx-swap="innerHTML"
                                         {% if unique_colors %}disabled{% endif %}>
-                                    <i class="bi bi-cart-plus fs-5"></i>
+                                    <i class="bi bi-cart-plus fs-4"></i>
                                     <span>افزودن به سبد خرید</span>
                                 </button>
                             </div>
@@ -155,31 +148,12 @@
                 </div>
 
                 <div class="d-flex justify-content-center gap-4 mt-4 text-muted small">
-                    <span class="d-flex align-items-center gap-1"><i class="bi bi-shield-check text-success fs-5"></i> ضمانت سلامت کالا</span>
-                    <span class="d-flex align-items-center gap-1"><i class="bi bi-truck text-primary fs-5"></i> ارسال سریع</span>
+                    <span class="d-flex align-items-center gap-1"><i class="bi bi-shield-check text-success fs-5"></i> ضمانت اصالت</span>
+                    <span class="d-flex align-items-center gap-1"><i class="bi bi-truck text-primary fs-5"></i> ارسال سراسری</span>
                 </div>
             </div>
         </div>
     </div>
-
-    {% if related_products %}
-    <div class="mt-5">
-        <h4 class="fw-bold mb-4">محصولات مشابه</h4>
-        <div class="row row-cols-2 row-cols-md-4 g-4">
-            {% for rel in related_products %}
-            <div class="col">
-                <div class="card h-100 border-0 shadow-sm rounded-4">
-                    <img src="{{ rel.images.0 }}" class="card-img-top rounded-top-4" style="height: 200px; object-fit: cover;">
-                    <div class="card-body">
-                        <h6 class="card-title fw-bold">{{ rel.name }}</h6>
-                        <a href="/shop/{{ shop.slug }}/product/{{ rel.id }}/" class="btn btn-sm btn-outline-primary w-100 mt-2">مشاهده</a>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
 </div>
 
 <script>
@@ -190,151 +164,13 @@
     function updateQty(change) {
         const input = document.getElementById('qty-input');
         let val = parseInt(input.value);
-        if (isNaN(val)) val = 1;
         val += change;
         if (val < 1) val = 1;
         if (val > 50) val = 50;
         input.value = val;
     }
 
-    // --- شروع منطق واریانت‌ها ---
-    const variantsJson = '{{ variants_json|escapejs }}';
-    const variants = variantsJson ? JSON.parse(variantsJson) : [];
-    const basePrice = parseFloat('{{ product.base_price|default:0 }}');
-    
-    const colorSelect = document.getElementById('color-select');
-    const sizeSelect = document.getElementById('size-select');
-    const variantInput = document.getElementById('selected-variant-id');
-    const buyNowBtn = document.getElementById('buy-now-btn');
-    const stockMsg = document.getElementById('stock-message');
-    const priceDisplay = document.getElementById('display-price');
-
-    function checkAvailability() {
-        // ۱. اگر محصول ساده است (سلکتور ندارد)
-        if (!colorSelect && !sizeSelect) {
-            if (variants.length > 0) {
-                // اولین واریانت (پیش‌فرض) را خودکار انتخاب کن
-                selectVariant(variants[0]);
-            }
-            return;
-        }
-
-        // ۲. اگر محصول دارای تنوع است
-        const selectedColor = colorSelect ? colorSelect.value : null;
-        const selectedSize = sizeSelect ? sizeSelect.value : null;
-
-        if (selectedColor && selectedSize) {
-            const found = variants.find(v => v.color === selectedColor && v.size === selectedSize);
-            if (found) {
-                selectVariant(found);
-            } else {
-                setButtonState(false, 'نامعتبر', 'این ترکیب رنگ و سایز وجود ندارد.', 'alert-danger');
-            }
-        } else {
-            // هنوز کاربر انتخاب نکرده
-            setButtonState(false, 'انتخاب کنید', '', '');
-        }
-    }
-
-    function selectVariant(variant) {
-        // محاسبه قیمت نهایی
-        const finalPrice = basePrice + variant.price_adj;
-        if(priceDisplay) priceDisplay.innerText = finalPrice.toLocaleString();
-
-        if (variant.stock > 0) {
-            // -- موجود است --
-            variantInput.value = variant.id;
-            
-            // فعال‌سازی دکمه به حالت "افزودن به سبد خرید"
-            buyNowBtn.disabled = false;
-            buyNowBtn.classList.remove('btn-secondary');
-            buyNowBtn.classList.add('btn-primary'); // رنگ آبی
-            buyNowBtn.innerHTML = '<i class="bi bi-cart-plus fs-5"></i> <span>افزودن به سبد خرید</span>';
-            
-            // پیام موجودی
-            if(stockMsg) {
-                stockMsg.innerText = `✓ موجود در انبار`;
-                stockMsg.className = 'alert alert-success py-2 mb-3 small';
-                stockMsg.classList.remove('d-none');
-            }
-        } else {
-            // -- ناموجود --
-            setButtonState(false, 'ناموجود', 'این کالا فعلاً موجود نیست.', 'alert-danger');
-        }
-    }
-
-    function setButtonState(enabled, btnText, msgText, msgClass) {
-        buyNowBtn.disabled = !enabled;
-        
-        if (!enabled) {
-            buyNowBtn.classList.remove('btn-primary', 'btn-success');
-            buyNowBtn.classList.add('btn-secondary'); // رنگ خاکستری
-            buyNowBtn.innerHTML = `<span>${btnText}</span>`;
-            variantInput.value = "";
-        }
-        
-        if (stockMsg) {
-            if (msgText) {
-                stockMsg.innerText = msgText;
-                stockMsg.className = `alert ${msgClass} py-2 mb-3 small`;
-                stockMsg.classList.remove('d-none');
-            } else {
-                stockMsg.classList.add('d-none');
-            }
-        }
-    }
-
-    // لیسنر HTMX برای آپدیت بج سبد خرید در هدر
-    document.body.addEventListener('htmx:afterRequest', function(evt) {
-        if (evt.detail.successful && evt.detail.elt.id === 'buy-now-btn') {
-            const response = JSON.parse(evt.detail.xhr.response);
-            if (response.success) {
-                const badges = document.querySelectorAll('.cart-badge-count');
-                badges.forEach(badge => {
-                    badge.innerText = response.cart_count;
-                    badge.classList.remove('d-none');
-                });
-            } else if (response.error) {
-                alert(response.error); // نمایش خطای بک‌اند (مثلاً موجودی ناکافی)
-            }
-        }
-    });
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const input = document.getElementById('qty-input');
-        if (!input.value || isNaN(parseInt(input.value))) input.value = 1;
-
-        // اجرای اولیه برای انتخاب خودکار در بارگذاری صفحه
-        checkAvailability();
-        
-        if (colorSelect) colorSelect.addEventListener('change', checkAvailability);
-        if (sizeSelect) sizeSelect.addEventListener('change', checkAvailability);
-    });
-</script>
-
-
-{% endblock %}
-
-
-
-
-<script>
-    // ... توابع changeImage و updateQty بدون تغییر باقی می‌مانند ...
-    function changeImage(src) {
-        document.getElementById('main-image').src = src;
-    }
-    
-    function updateQty(change) {
-        const input = document.getElementById('qty-input');
-        let val = parseInt(input.value);
-        if (isNaN(val)) val = 1;
-        val += change;
-        if (val < 1) val = 1;
-        if (val > 50) val = 50;
-        input.value = val;
-    }
-
-    // --- منطق واریانت‌ها ---
+    // منطق واریانت‌ها
     const variantsJson = '{{ variants_json|escapejs }}';
     const variants = variantsJson ? JSON.parse(variantsJson) : [];
     const basePrice = parseFloat('{{ product.base_price|default:0 }}');
@@ -360,7 +196,7 @@
             if (found) {
                 selectVariant(found);
             } else {
-                setButtonState(false, 'نامعتبر', 'این ترکیب رنگ و سایز وجود ندارد.', 'alert-danger');
+                setButtonState(false, 'ناموجود', 'این ترکیب رنگ و سایز موجود نیست.', 'alert-danger');
             }
         } else {
             setButtonState(false, 'انتخاب کنید', '', '');
@@ -373,26 +209,24 @@
 
         if (variant.stock > 0) {
             variantInput.value = variant.id;
-            
             buyNowBtn.disabled = false;
-            buyNowBtn.classList.remove('btn-secondary');
-            buyNowBtn.classList.add('btn-primary');
-            buyNowBtn.innerHTML = '<i class="bi bi-cart-plus fs-5"></i> <span>افزودن به سبد خرید</span>';
+            buyNowBtn.classList.replace('btn-secondary', 'btn-primary');
+            buyNowBtn.innerHTML = '<i class="bi bi-cart-plus fs-4"></i> <span>افزودن به سبد خرید</span>';
             
             if(stockMsg) {
-                stockMsg.innerText = `✓ موجود در انبار`;
-                stockMsg.className = 'alert alert-success py-2 mb-3 small';
+                stockMsg.innerText = `✓ موجود در انبار (تعداد: ${variant.stock})`;
+                stockMsg.className = 'alert alert-success py-2 mb-3 small animate__animated animate__fadeIn';
                 stockMsg.classList.remove('d-none');
             }
         } else {
-            setButtonState(false, 'ناموجود', 'این کالا فعلاً موجود نیست.', 'alert-danger');
+            setButtonState(false, 'ناموجود', 'موجودی این ترکیب به اتمام رسیده است.', 'alert-danger');
         }
     }
 
     function setButtonState(enabled, btnText, msgText, msgClass) {
         buyNowBtn.disabled = !enabled;
         if (!enabled) {
-            buyNowBtn.classList.remove('btn-primary', 'btn-success');
+            buyNowBtn.classList.remove('btn-primary');
             buyNowBtn.classList.add('btn-secondary');
             buyNowBtn.innerHTML = `<span>${btnText}</span>`;
             variantInput.value = "";
@@ -400,7 +234,7 @@
         if (stockMsg) {
             if (msgText) {
                 stockMsg.innerText = msgText;
-                stockMsg.className = `alert ${msgClass} py-2 mb-3 small`;
+                stockMsg.className = `alert ${msgClass} py-2 mb-3 small animate__animated animate__shakeX`;
                 stockMsg.classList.remove('d-none');
             } else {
                 stockMsg.classList.add('d-none');
@@ -408,37 +242,34 @@
         }
     }
 
-    // ==========================================
-    // بخش مهم: آپدیت آیکون سبد خرید (اصلاح شده)
-    // ==========================================
+    // گوش دادن به اتمام درخواست HTMX
     document.body.addEventListener('htmx:afterRequest', function(evt) {
-        // فقط اگر درخواست مربوط به دکمه خرید بود
         if (evt.detail.successful && evt.detail.elt.id === 'buy-now-btn') {
             const response = JSON.parse(evt.detail.xhr.response);
-            
             if (response.success) {
-                // ۱. آپدیت مستقیم عدد روی آیکون (با استفاده از ID به جای کلاس)
+                // ۱. بروزرسانی عدد سبد خرید (اگر هدر تغییر نکرد)
                 const badge = document.getElementById('cart-badge-count');
-                if (badge) {
-                    badge.innerText = response.cart_count;
-                    badge.classList.remove('d-none');
+                if (badge) badge.innerText = response.cart_count;
+
+                // ۲. باز کردن خودکار سایدبار سبد خرید
+                const cartSidebar = document.getElementById('cart-sidebar');
+                if (cartSidebar) {
+                    const bsOffcanvas = bootstrap.Offcanvas.getOrCreateInstance(cartSidebar);
+                    bsOffcanvas.show();
                 }
                 
-                // ۲. ارسال سیگنال برای رفرش شدن سایدبار (اگر باز باشد)
-                // این رویداد باعث می‌شود تگ‌هایی که hx-trigger="cartUpdated" دارند (مثل سایدبار) دوباره لود شوند
+                // ۳. ارسال سیگنال به سایر اجزا برای رفرش شدن
                 document.body.dispatchEvent(new Event('cartUpdated'));
-
-            } else if (response.error) {
-                alert(response.error);
+            } else {
+                alert(response.error || "خطایی رخ داد");
             }
         }
     });
 
     document.addEventListener('DOMContentLoaded', function() {
-        const input = document.getElementById('qty-input');
-        if (!input.value || isNaN(parseInt(input.value))) input.value = 1;
         checkAvailability();
         if (colorSelect) colorSelect.addEventListener('change', checkAvailability);
         if (sizeSelect) sizeSelect.addEventListener('change', checkAvailability);
     });
 </script>
+{% endblock %}

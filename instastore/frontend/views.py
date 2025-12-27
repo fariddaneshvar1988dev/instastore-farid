@@ -67,8 +67,10 @@ class ProfileView(TemplateView):
 
 @require_POST
 def add_to_cart(request, product_id):
-    cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
+    # ایجاد سبد خرید اختصاصی برای این فروشگاه
+    cart = Cart(request, shop_id=product.shop.id)
+    
     variant_id = request.POST.get('variant_id')
     quantity = int(request.POST.get('quantity', 1))
     
@@ -89,26 +91,36 @@ def add_to_cart(request, product_id):
         'success': True,
         'message': 'به سبد خرید اضافه شد',
         'cart_count': cart.get_total_items(),
-        'cart_total': cart.get_total_price()
+        'cart_total': float(cart.get_total_price())
     })
 
 @require_POST
 def remove_from_cart(request, item_key):
-    cart = Cart(request)
+    # پیدا کردن واریانت برای تشخیص اینکه متعلق به کدام فروشگاه است
+    variant = get_object_or_404(ProductVariant, id=item_key)
+    cart = Cart(request, shop_id=variant.product.shop.id)
     cart.remove(item_key)
-    return get_cart_sidebar(request)
+    
+    # هدایت به سایدبار با پارامتر فروشگاه برای بروزرسانی HTMX
+    return redirect(f"/cart/sidebar/?shop_slug={variant.product.shop.slug}")
 
 def get_cart_component(request):
     return render(request, 'partials/cart_badge.html')
 
 def get_cart_sidebar(request):
-    cart = Cart(request)
-    shop_slug = None
-    for item in cart:
-        if item['product'].shop:
-            shop_slug = item['product'].shop.slug
-            break
-    return render(request, 'partials/cart_sidebar.html', {'cart': cart, 'shop_slug': shop_slug})
+    shop_slug = request.GET.get('shop_slug')
+    shop = None
+    if shop_slug:
+        shop = get_object_or_404(Shop, slug=shop_slug)
+        cart = Cart(request, shop_id=shop.id)
+    else:
+        cart = Cart(request)
+        
+    return render(request, 'partials/cart_sidebar.html', {
+        'cart': cart, 
+        'shop_slug': shop_slug,
+        'shop': shop
+    })
 
 # ==========================================================
 # 3. فروشگاه و محصول (Storefront)
@@ -160,26 +172,40 @@ class ProductDetailView(TemplateView):
 class CheckoutView(View):
     def get(self, request, shop_slug):
         shop = get_object_or_404(Shop, slug=shop_slug, is_active=True)
-        cart = Cart(request)
+        cart = Cart(request, shop_id=shop.id)
+        
         if cart.get_total_items() == 0:
             messages.warning(request, "سبد خرید شما خالی است.")
             return redirect('frontend:shop-store', shop_slug=shop.slug)
+
+        # چک کردن موجودی انبار قبل از نمایش فرم آدرس
+        for item in cart:
+            variant = item['variant']
+            if variant.stock < item['quantity'] or not variant.product.is_active:
+                messages.error(request, f"موجودی کالا یا وضعیت '{variant.product.name}' تغییر کرده است.")
+                return redirect('frontend:shop-store', shop_slug=shop.slug)
+            
         return render(request, 'frontend/checkout.html', {'shop': shop, 'cart': cart})
 
     def post(self, request, shop_slug):
         shop = get_object_or_404(Shop, slug=shop_slug, is_active=True)
-        cart = Cart(request)
+        cart = Cart(request, shop_id=shop.id)
         
         if cart.get_total_items() == 0:
             messages.warning(request, "سبد خرید خالی است.")
             return redirect('frontend:shop-store', shop_slug=shop.slug)
+
+        customer_phone = request.POST.get('customer_phone', '')
+        if not customer_phone.startswith('09') or len(customer_phone) != 11:
+            messages.error(request, "لطفاً یک شماره موبایل معتبر (مثل 09123456789) وارد کنید.")
+            return render(request, 'frontend/checkout.html', {'shop': shop, 'cart': cart})
 
         try:
             with transaction.atomic():
                 order = Order.objects.create(
                     shop=shop,
                     customer_name=request.POST.get('customer_name'),
-                    customer_phone=request.POST.get('customer_phone'),
+                    customer_phone=customer_phone,
                     shipping_address=request.POST.get('address'),
                     customer_notes=request.POST.get('note'),
                     subtotal=cart.get_total_price(),
@@ -187,18 +213,17 @@ class CheckoutView(View):
                 )
 
                 for item in cart:
-                    variant_id = item.get('variant_id')
-                    if variant_id:
-                        variant = ProductVariant.objects.select_for_update().get(id=variant_id)
-                        if variant.stock < item['quantity']:
-                            raise Exception(f"موجودی کالای '{item['product'].name}' کافی نیست.")
-                        variant.stock -= item['quantity']
-                        variant.save()
-                        
-                        OrderItem.objects.create(
-                            order=order, variant=variant, product_name=item['product'].name,
-                            quantity=item['quantity'], unit_price=item['price'], total_price=item['total_price']
-                        )
+                    variant = ProductVariant.objects.select_for_update().get(id=item['variant'].id)
+                    if variant.stock < item['quantity']:
+                        raise Exception(f"موجودی کالای '{variant.product.name}' در این لحظه به پایان رسید.")
+                    
+                    variant.stock -= item['quantity']
+                    variant.save()
+                    
+                    OrderItem.objects.create(
+                        order=order, variant=variant, product_name=variant.product.name,
+                        quantity=item['quantity'], unit_price=item['price'], total_price=item['total_price']
+                    )
 
                 cart.clear()
                 messages.success(request, f"سفارش شماره #{order.order_id} با موفقیت ثبت شد.")
