@@ -24,9 +24,7 @@
             --light: #f9fafb;
         }
 
-        * {
-            font-family: 'Vazirmatn', sans-serif;
-        }
+        * { font-family: 'Vazirmatn', sans-serif; }
 
         body {
             background-color: var(--light);
@@ -55,8 +53,7 @@
             transition: all 0.2s;
         }
 
-        .nav-link:hover,
-        .nav-link.active {
+        .nav-link:hover, .nav-link.active {
             color: var(--primary) !important;
             transform: translateY(-1px);
         }
@@ -65,19 +62,12 @@
             border-radius: 50px;
             padding: 8px 25px;
             font-weight: 600;
-            transition: all 0.3s;
-        }
-
-        .btn-auth:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
 
         .dropdown-menu {
             border: none;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
             border-radius: 12px;
-            padding: 0.8rem;
         }
 
         .badge-cart {
@@ -118,33 +108,17 @@
                 <ul class="navbar-nav me-auto align-items-center">
                     {% if request.user.is_authenticated %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle text-primary fw-bold" href="#" role="button"
-                            data-bs-toggle="dropdown">
+                        <a class="nav-link dropdown-toggle text-primary fw-bold" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-grid-1x2-fill me-1"></i> پنل مدیریت
                         </a>
                         <ul class="dropdown-menu animate__animated animate__fadeIn">
-                            <li>
-                                <a class="dropdown-item" href="{% url 'frontend:seller-dashboard' %}">
-                                    <i class="bi bi-speedometer2 me-2"></i> داشبورد
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{% url 'frontend:seller-products' %}">
-                                    <i class="bi bi-box-seam me-2"></i> محصولات
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{% url 'frontend:seller-orders' %}">
-                                    <i class="bi bi-cart-check me-2"></i> سفارشات
-                                </a>
-                            </li>
+                            <li><a class="dropdown-item" href="{% url 'frontend:seller-dashboard' %}"><i class="bi bi-speedometer2 me-2"></i> داشبورد</a></li>
+                            <li><a class="dropdown-item" href="{% url 'frontend:seller-products' %}"><i class="bi bi-box-seam me-2"></i> محصولات</a></li>
+                            <li><a class="dropdown-item" href="{% url 'frontend:seller-orders' %}"><i class="bi bi-cart-check me-2"></i> سفارشات</a></li>
                             {% if request.user.shop %}
+                            <li><hr class="dropdown-divider"></li>
                             <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li>
-                                <a class="dropdown-item text-primary"
-                                    href="{% url 'frontend:shop-store' request.user.shop.slug %}" target="_blank">
+                                <a class="dropdown-item text-primary" href="{% url 'frontend:shop-store' request.user.shop.slug %}" target="_blank">
                                     <i class="bi bi-browser-safari me-2"></i> مشاهده فروشگاه من
                                 </a>
                             </li>
@@ -157,25 +131,21 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'frontend:contact' %}">تماس با ما</a></li>
 
                     {% if not request.user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link text-success fw-bold" href="{% url 'frontend:register-page' %}">ثبت‌نام
-                            فروشگاه</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link text-success fw-bold" href="{% url 'frontend:register-page' %}">ثبت‌نام فروشگاه</a></li>
                     {% endif %}
                 </ul>
 
                 <div class="d-flex align-items-center gap-3">
-                    {% if '/shop/' in request.path %}
+                    {% if shop.slug and '/shop/' in request.path %}
                     <div class="position-relative">
-                        <button
-                            class="btn btn-light border position-relative rounded-circle shadow-sm d-flex align-items-center justify-content-center"
-                            style="width: 45px; height: 45px;" type="button" data-bs-toggle="offcanvas"
-                            data-bs-target="#cart-sidebar">
+                        <button class="btn btn-light border position-relative rounded-circle shadow-sm d-flex align-items-center justify-content-center"
+                                style="width: 45px; height: 45px;" type="button" data-bs-toggle="offcanvas" data-bs-target="#cart-sidebar">
                             <i class="bi bi-cart3 fs-5 text-dark"></i>
-                            <span id="cart-badge-count" hx-get="{% url 'frontend:cart-component' %}"
-                                hx-trigger="load, cartUpdated from:body"
-                                class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle border border-light badge-cart">
-                                {{ request.session.cart|length|default:"0" }}
+                            <span id="cart-badge-count" 
+                                  hx-get="{% url 'frontend:cart-component' %}?shop_slug={{ shop.slug }}"
+                                  hx-trigger="load, cartUpdated from:body"
+                                  class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle border border-light badge-cart">
+                                0
                             </span>
                         </button>
                     </div>
@@ -183,31 +153,21 @@
 
                     {% if request.user.is_authenticated %}
                     <div class="dropdown">
-                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark"
-                            data-bs-toggle="dropdown">
+                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark" data-bs-toggle="dropdown">
                             <span class="me-2 small fw-bold d-none d-md-block">{{ request.user.username }}</span>
-                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm"
-                                style="width: 35px; height: 35px;">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 35px; height: 35px;">
                                 <i class="bi bi-person-fill"></i>
                             </div>
                         </a>
-                        <ul
-                            class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 animate__animated animate__fadeIn">
-                            <li><a class="dropdown-item" href="{% url 'frontend:profile' %}"><i
-                                        class="bi bi-person-circle me-2"></i> پروفایل من</a></li>
-                            <li><a class="dropdown-item" href="{% url 'frontend:seller-settings' %}"><i
-                                        class="bi bi-gear me-2"></i> تنظیمات فروشگاه</a></li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li><a class="dropdown-item text-danger" href="{% url 'frontend:logout' %}"><i
-                                        class="bi bi-box-arrow-right me-2"></i> خروج از حساب</a></li>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 animate__animated animate__fadeIn">
+                            <li><a class="dropdown-item" href="{% url 'frontend:profile' %}"><i class="bi bi-person-circle me-2"></i> پروفایل من</a></li>
+                            <li><a class="dropdown-item" href="{% url 'frontend:seller-settings' %}"><i class="bi bi-gear me-2"></i> تنظیمات فروشگاه</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'frontend:logout' %}"><i class="bi bi-box-arrow-right me-2"></i> خروج</a></li>
                         </ul>
                     </div>
                     {% else %}
-                    <a href="{% url 'frontend:login' %}" class="btn btn-primary btn-auth shadow-sm">
-                        <i class="bi bi-door-open me-1"></i> ورود
-                    </a>
+                    <a href="{% url 'frontend:login' %}" class="btn btn-primary btn-auth shadow-sm">ورود</a>
                     {% endif %}
                 </div>
             </div>
@@ -218,10 +178,7 @@
         {% if messages %}
         <div class="container mt-3">
             {% for message in messages %}
-            <div
-                class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm border-0 animate__animated animate__headShake">
-                {% if message.tags == 'success' %}<i class="bi bi-check-circle-fill me-2"></i>{% endif %}
-                {% if message.tags == 'error' %}<i class="bi bi-exclamation-octagon-fill me-2"></i>{% endif %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm border-0 animate__animated animate__headShake">
                 {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
@@ -235,24 +192,33 @@
     <footer class="py-4 text-center text-muted small bg-white border-top">
         <div class="container">
             <p class="mb-1">© ۱۴۰۳ InstaStore - پلتفرم فروشگاه‌ساز اینستاگرامی</p>
-            <div class="d-flex justify-content-center gap-3 mt-2">
-                <a href="#" class="text-muted text-decoration-none"><i class="bi bi-instagram"></i></a>
-                <a href="#" class="text-muted text-decoration-none"><i class="bi bi-telegram"></i></a>
-                <a href="#" class="text-muted text-decoration-none"><i class="bi bi-whatsapp"></i></a>
-            </div>
         </div>
     </footer>
 
     {% if shop.slug %}
     <div class="offcanvas offcanvas-start" tabindex="-1" id="cart-sidebar" dir="rtl" style="width: 400px;"
-        hx-get="{% url 'frontend:cart-sidebar' %}?shop_slug={{ shop.slug }}" hx-trigger="load, cartUpdated from:body"
-        hx-swap="innerHTML">
-        ...
+         hx-get="{% url 'frontend:cart-sidebar' %}?shop_slug={{ shop.slug }}" 
+         hx-trigger="cartUpdated from:body"
+         hx-swap="innerHTML">
+        <div class="offcanvas-header border-bottom">
+            <h5 class="offcanvas-title fw-bold">سبد خرید</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body d-flex justify-content-center align-items-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">در حال بارگذاری...</span>
+            </div>
+        </div>
     </div>
     {% endif %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // شنونده سراسری برای به‌روزرسانی اجزای صفحه در صورت تغییر سبد خرید
+        document.body.addEventListener('cartUpdated', function(evt) {
+            console.log("Cart updated for shop: {{ shop.slug }}");
+        });
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
-
 </html>

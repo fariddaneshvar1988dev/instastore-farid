@@ -25,12 +25,10 @@ urlpatterns = [
     path('seller/settings/', views.ShopSettingsView.as_view(), name='seller-settings'),
 
     # ---- سبد خرید (API) ----
-    path('cart/get-sidebar/', views.get_cart_sidebar, name='cart-sidebar'),
-    path('cart/get-badge/', views.get_cart_component, name='cart-component'),
     path('cart/add/<int:product_id>/', views.add_to_cart, name='add-to-cart'),
-    path('cart/remove/<str:item_key>/', views.remove_from_cart, name='remove-from-cart'),
-
-    # ---- فروشگاه مشتری (حیاتی) ----
+    path('cart/remove/<int:item_key>/', views.remove_from_cart, name='remove-from-cart'),
+    path('cart/sidebar/', views.get_cart_sidebar, name='cart-sidebar'),
+    path('cart/get-badge/', views.get_cart_component, name='cart-component'), # نام را به cart-component تغییر دهید    # ---- فروشگاه مشتری (حیاتی) ----
     path('track-order/', views.OrderTrackingView.as_view(), name='order-tracking'),
     
     # 1. صفحه اصلی فروشگاه

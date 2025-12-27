@@ -96,32 +96,58 @@ def add_to_cart(request, product_id):
 
 @require_POST
 def remove_from_cart(request, item_key):
-    # پیدا کردن واریانت برای تشخیص اینکه متعلق به کدام فروشگاه است
+    # ۱. پیدا کردن واریانت برای تشخیص فروشگاه
     variant = get_object_or_404(ProductVariant, id=item_key)
-    cart = Cart(request, shop_id=variant.product.shop.id)
+    shop = variant.product.shop
+    
+    # ۲. حذف از سبد خرید اختصاصی همان فروشگاه
+    cart = Cart(request, shop_id=shop.id)
     cart.remove(item_key)
     
-    # هدایت به سایدبار با پارامتر فروشگاه برای بروزرسانی HTMX
-    return redirect(f"/cart/sidebar/?shop_slug={variant.product.shop.slug}")
+    # ۳. رندر کردن مجدد سایدبار برای HTMX
+    return render(request, 'partials/cart_sidebar.html', {
+        'cart': cart,
+        'shop': shop,
+        'shop_slug': shop.slug
+    })
 
 def get_cart_component(request):
-    return render(request, 'partials/cart_badge.html')
+    shop_slug = request.GET.get('shop_slug')
+    shop_id = None
+    if shop_slug:
+        shop = Shop.objects.filter(slug=shop_slug).first()
+        if shop:
+            shop_id = shop.id
+            
+    # ایجاد شیء سبد خرید با توجه به فروشگاه فعلی
+    cart = Cart(request, shop_id=shop_id)
+    return render(request, 'partials/cart_badge.html', {'cart': cart})
 
 def get_cart_sidebar(request):
     shop_slug = request.GET.get('shop_slug')
-    shop = None
+    shop = get_object_or_404(Shop, slug=shop_slug) # این خط مهم است
+    cart = Cart(request, shop_id=shop.id)
+    return render(request, 'partials/cart_sidebar.html', {
+        'cart': cart,
+        'shop': shop, # حتما ارسال شود
+        'shop_slug': shop_slug
+    })
+    
+    # پیدا کردن فروشگاه
     if shop_slug:
-        shop = get_object_or_404(Shop, slug=shop_slug)
+        shop = Shop.objects.filter(slug=shop_slug, is_active=True).first()
+    
+    # اگر فروشگاه پیدا شد، سبد مخصوص آن را لود کن، در غیر این صورت سبد پیش‌فرض
+    if shop:
         cart = Cart(request, shop_id=shop.id)
     else:
         cart = Cart(request)
-        
+
     return render(request, 'partials/cart_sidebar.html', {
-        'cart': cart, 
+        'cart': cart,
         'shop_slug': shop_slug,
         'shop': shop
     })
-
 # ==========================================================
 # 3. فروشگاه و محصول (Storefront)
 # ==========================================================

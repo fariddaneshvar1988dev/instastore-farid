@@ -157,6 +157,9 @@
 </div>
 
 <script>
+    /**
+     * توابع عمومی رابط کاربری
+     */
     function changeImage(src) {
         document.getElementById('main-image').src = src;
     }
@@ -164,13 +167,16 @@
     function updateQty(change) {
         const input = document.getElementById('qty-input');
         let val = parseInt(input.value);
+        if (isNaN(val)) val = 1;
         val += change;
         if (val < 1) val = 1;
         if (val > 50) val = 50;
         input.value = val;
     }
 
-    // منطق واریانت‌ها
+    /**
+     * منطق مدیریت واریانت‌ها (رنگ و سایز)
+     */
     const variantsJson = '{{ variants_json|escapejs }}';
     const variants = variantsJson ? JSON.parse(variantsJson) : [];
     const basePrice = parseFloat('{{ product.base_price|default:0 }}');
@@ -183,11 +189,13 @@
     const priceDisplay = document.getElementById('display-price');
 
     function checkAvailability() {
+        // ۱. اگر محصول ساده است (بدون تنوع رنگ و سایز)
         if (!colorSelect && !sizeSelect) {
             if (variants.length > 0) selectVariant(variants[0]);
             return;
         }
 
+        // ۲. اگر محصول دارای تنوع است
         const selectedColor = colorSelect ? colorSelect.value : null;
         const selectedSize = sizeSelect ? sizeSelect.value : null;
 
@@ -196,7 +204,7 @@
             if (found) {
                 selectVariant(found);
             } else {
-                setButtonState(false, 'ناموجود', 'این ترکیب رنگ و سایز موجود نیست.', 'alert-danger');
+                setButtonState(false, 'نامعتبر', 'این ترکیب موجود نیست.', 'alert-danger');
             }
         } else {
             setButtonState(false, 'انتخاب کنید', '', '');
@@ -210,7 +218,8 @@
         if (variant.stock > 0) {
             variantInput.value = variant.id;
             buyNowBtn.disabled = false;
-            buyNowBtn.classList.replace('btn-secondary', 'btn-primary');
+            buyNowBtn.classList.remove('btn-secondary');
+            buyNowBtn.classList.add('btn-primary');
             buyNowBtn.innerHTML = '<i class="bi bi-cart-plus fs-4"></i> <span>افزودن به سبد خرید</span>';
             
             if(stockMsg) {
@@ -242,30 +251,44 @@
         }
     }
 
-    // گوش دادن به اتمام درخواست HTMX
+    /**
+     * مدیریت پاسخ‌های HTMX و آپدیت سایدبار
+     */
     document.body.addEventListener('htmx:afterRequest', function(evt) {
+        // اطمینان از اینکه درخواست موفق بوده و مربوط به دکمه خرید است
         if (evt.detail.successful && evt.detail.elt.id === 'buy-now-btn') {
-            const response = JSON.parse(evt.detail.xhr.response);
-            if (response.success) {
-                // ۱. بروزرسانی عدد سبد خرید (اگر هدر تغییر نکرد)
-                const badge = document.getElementById('cart-badge-count');
-                if (badge) badge.innerText = response.cart_count;
-
-                // ۲. باز کردن خودکار سایدبار سبد خرید
-                const cartSidebar = document.getElementById('cart-sidebar');
-                if (cartSidebar) {
-                    const bsOffcanvas = bootstrap.Offcanvas.getOrCreateInstance(cartSidebar);
-                    bsOffcanvas.show();
-                }
+            try {
+                const response = JSON.parse(evt.detail.xhr.response);
                 
-                // ۳. ارسال سیگنال به سایر اجزا برای رفرش شدن
-                document.body.dispatchEvent(new Event('cartUpdated'));
-            } else {
-                alert(response.error || "خطایی رخ داد");
+                if (response.success) {
+                    // ۱. آپدیت عدد آیکون سبد خرید در هدر
+                    const badge = document.getElementById('cart-badge-count');
+                    if (badge) {
+                        badge.innerText = response.cart_count;
+                        badge.classList.remove('d-none');
+                    }
+
+                    // ۲. ارسال سیگنال سراسری برای رفرش شدن محتوای سایدبار (HTMX Trigger)
+                    document.body.dispatchEvent(new Event('cartUpdated'));
+
+                    // ۳. نمایش سایدبار به صورت خودکار (Bootstrap Offcanvas)
+                    const cartSidebarElt = document.getElementById('cart-sidebar');
+                    if (cartSidebarElt) {
+                        const bsOffcanvas = bootstrap.Offcanvas.getOrCreateInstance(cartSidebarElt);
+                        bsOffcanvas.show();
+                    }
+                } else if (response.error) {
+                    alert("خطا: " + response.error);
+                }
+            } catch (e) {
+                console.error("خطا در پردازش پاسخ سرور:", e);
             }
         }
     });
 
+    /**
+     * آماده‌سازی اولیه در هنگام لود صفحه
+     */
     document.addEventListener('DOMContentLoaded', function() {
         checkAvailability();
         if (colorSelect) colorSelect.addEventListener('change', checkAvailability);
