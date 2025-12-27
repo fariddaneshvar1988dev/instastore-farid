@@ -325,6 +325,25 @@ class SellerProductCreateView(CreateView):
         return redirect(self.success_url)
 
 @method_decorator(login_required, name='dispatch')
+class SellerProductUpdateView(UpdateView):
+    model = Product
+    form_class = ProductForm
+    template_name = 'frontend/seller_product_form.html'
+    success_url = reverse_lazy('frontend:seller-products')
+
+    def get_queryset(self):
+        return Product.objects.filter(shop=self.request.user.shop)
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['shop'] = self.request.user.shop
+        return kwargs
+    
+    def form_valid(self, form):
+        messages.success(self.request, "محصول با موفقیت بروزرسانی شد.")
+        return super().form_valid(form)
+
+@method_decorator(login_required, name='dispatch')
 class ShopSettingsView(UpdateView):
     model = Shop
     form_class = ShopSettingsForm
