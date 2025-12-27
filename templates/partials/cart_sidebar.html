@@ -14,7 +14,7 @@
                 <div class="card border-0 shadow-sm mb-3">
                     <div class="card-body p-2 d-flex align-items-center">
                         
-                        <a href="/shop/{{ item.shop_slug }}/product/{{ item.product_id }}/" class="flex-shrink-0 ms-3">
+                        <a href="/shop/{{ item.product.shop.slug }}/product/{{ item.product_id }}/" class="flex-shrink-0 ms-3">
                             {% if item.image %}
                                 <img src="{{ item.image }}" class="rounded-3 border" style="width: 60px; height: 60px; object-fit: cover;">
                             {% else %}
@@ -25,7 +25,7 @@
                         </a>
                         
                         <div class="flex-grow-1">
-                            <a href="/shop/{{ item.shop_slug }}/product/{{ item.product_id }}/" class="text-decoration-none text-dark">
+                            <a href="/shop/{{ item.product.shop.slug }}/product/{{ item.product_id }}/" class="text-decoration-none text-dark">
                                 <h6 class="mb-1 fw-bold small text-truncate" style="max-width: 150px;">{{ item.name }}</h6>
                             </a>
                             
@@ -57,11 +57,10 @@
             </div>
 
             <div class="border-top p-3 bg-light mt-auto">
-                <div class="d-flex justify-content-between fw-bold mb-3">
+                <div class="d-flex justify-content-between fw-bold mb-0">
                     <span>جمع کل:</span>
                     <span class="text-primary">{{ cart_total_price|intcomma }} تومان</span>
                 </div>
-                <a href="/shop/{{ shop_slug }}/checkout/" class="btn btn-primary w-100">تکمیل خرید</a>
             </div>
         </div>
     {% else %}

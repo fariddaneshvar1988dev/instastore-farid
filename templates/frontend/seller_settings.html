@@ -11,9 +11,9 @@
                     <h5 class="mb-0 fw-bold">⚙️ تنظیمات فروشگاه</h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST" novalidate>
+                    <form method="POST">
                         {% csrf_token %}
-
+                        
                         {% if form.errors %}
                             <div class="alert alert-danger">{{ form.errors }}</div>
                         {% endif %}
@@ -54,6 +54,7 @@
                             </div>
 
                             <div class="tab-pane fade" id="payment">
+                                
                                 <div class="card bg-light border-0 mb-3">
                                     <div class="card-body">
                                         <div class="form-check form-switch">
@@ -100,6 +101,7 @@
                                         </div>
                                     </div>
                                 </div>
+
                             </div>
                         </div>
 

@@ -1,53 +1,92 @@
 {% extends 'base.html' %}
-
-{% block title %}ثبت‌نام فروشنده | اینستاستور{% endblock %}
+{% block title %}ثبت‌نام فروشگاه - InstaStore{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-4">
-                <h3 class="text-center mb-4">ساخت فروشگاه جدید</h3>
-                
-                {% if form.errors %}
-                    <div class="alert alert-danger">
-                        لطفاً خطاهای زیر را برطرف کنید:
-                        {{ form.non_field_errors }}
-                        <ul>
-                            {% for field in form %}
-                                {% for error in field.errors %}
-                                    <li>{{ field.label }}: {{ error }}</li>
-                                {% endfor %}
-                            {% endfor %}
-                        </ul>
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow border-0 rounded-4 animate__animated animate__fadeInUp">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                            <i class="bi bi-shop fs-2"></i>
+                        </div>
+                        <h3 class="card-title fw-bold text-primary">ساخت فروشگاه جدید</h3>
+                        <p class="text-muted">اطلاعات فروشگاه خود را وارد کنید تا در چند ثانیه آنلاین شوید</p>
                     </div>
-                {% endif %}
-
-                <form method="post" novalidate>
-                    {% csrf_token %}
                     
-                    {% for field in form %}
-                    <div class="mb-3">
-                        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                        {{ field }}
-                        {% if field.help_text %}
-                            <div class="form-text text-muted">{{ field.help_text }}</div>
+                    <form method="POST" action="{% url 'frontend:register-page' %}">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                            <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i> لطفاً خطاهای زیر را برطرف کنید.
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
                         {% endif %}
-                    </div>
-                    {% endfor %}
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">نام کاربری (انگلیسی)</label>
+                                {{ form.username }}
+                                {% if form.username.errors %}
+                                    <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+                                {% endif %}
+                            </div>
 
-                    <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg">ثبت و ساخت فروشگاه</button>
-                    </div>
-                </form>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">ایمیل</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>
+                                {% endif %}
+                            </div>
 
-                <hr class="my-4">
-                
-                <div class="text-center">
-                    <p class="text-muted">قبلاً ثبت‌نام کرده‌اید؟</p>
-                    <a href="{% url 'frontend:login' %}" class="btn btn-outline-secondary btn-sm">
-                        ورود به پنل مدیریت
-                    </a>
+                            <div class="col-12">
+                                <label class="form-label text-muted small">نام فروشگاه (فارسی)</label>
+                                {{ form.shop_name }}
+                                {% if form.shop_name.errors %}
+                                    <div class="text-danger small mt-1">{{ form.shop_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label text-muted small">آدرس اینترنتی فروشگاه (Slug)</label>
+                                <div class="input-group" dir="ltr">
+                                    <span class="input-group-text bg-light">instastore.ir/shop/</span>
+                                    {{ form.shop_slug }}
+                                </div>
+                                <div class="form-text small text-end">فقط حروف انگلیسی و خط تیره (-)</div>
+                                {% if form.shop_slug.errors %}
+                                    <div class="text-danger small mt-1 text-end">{{ form.shop_slug.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label text-muted small">آیدی اینستاگرام</label>
+                                <div class="input-group" dir="ltr">
+                                    <span class="input-group-text bg-light"><i class="bi bi-instagram"></i></span>
+                                    {{ form.instagram_username }}
+                                </div>
+                                {% if form.instagram_username.errors %}
+                                    <div class="text-danger small mt-1 text-end">{{ form.instagram_username.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill fw-bold shadow-sm">
+                                <i class="bi bi-rocket-takeoff-fill me-2"></i> ایجاد فروشگاه رایگان
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4 pt-3 border-top">
+                        <p class="text-muted mb-0">
+                            قبلاً ثبت‌نام کرده‌اید؟ 
+                            <a href="{% url 'frontend:login' %}" class="text-decoration-none fw-bold text-primary">وارد شوید</a>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

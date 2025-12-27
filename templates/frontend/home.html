@@ -1,147 +1,29 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}InstaStore - تبدیل پیج اینستاگرام به فروشگاه حرفه‌ای{% endblock %}
-
-{% block extra_css %}
-<style>
-    .hero-section {
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        padding: 100px 0;
-        color: white;
-        border-radius: 0 0 50px 50px;
-        margin-bottom: 60px;
-    }
-    
-    .feature-card {
-        border: none;
-        border-radius: 20px;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        background: white;
-        height: 100%;
-        padding: 2rem;
-    }
-    
-    .feature-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-    }
-    
-    .icon-box {
-        width: 80px;
-        height: 80px;
-        border-radius: 20px;
-        background: rgba(99, 102, 241, 0.1);
-        color: var(--primary);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 2rem;
-        margin-bottom: 1.5rem;
-    }
-    
-    .cta-btn {
-        padding: 15px 40px;
-        font-size: 1.1rem;
-        border-radius: 50px;
-        font-weight: bold;
-        transition: all 0.3s;
-    }
-    
-    .cta-btn:hover {
-        transform: scale(1.05);
-    }
-</style>
-{% endblock %}
+{% block title %}اینستاستور | پلتفرم فروشگاه‌ساز آنلاین{% endblock %}
 
 {% block content %}
-<<<<<<< HEAD
-<div class="text-center mb-5">
-    <h1 class="display-4 mb-3">🛍️ فروشگاه اختصاصی پیج اینستاگرام شما</h1>
-    <p class="lead text-muted">لینک فروشگاه خود را دریافت کنید و مستقیم از اینستاگرام بفروشید</p>
-
-    <div class="row justify-content-center mt-4">
-        <div class="col-md-6">
-            <div class="input-group">
-                <input type="text" class="form-control" placeholder="نام کاربری اینستاگرام (مثال: @jadeh_poshak)" id="shop-search">
-                <button class="btn btn-primary" onclick="searchShop()"><i class="fas fa-search"></i> پیدا کن</button>
-            </div>
-            <div class="mt-2 text-muted small">یا لینک مستقیم فروشگاه خود را وارد کنید</div>
-        </div>
-    </div>
-</div>
-
-<h3 class="mb-4">✨ فروشگاه‌های فعال</h3>
-<div class="row" id="featured-shops">
-    {% for shop in featured_shops %}
-    <div class="col-md-4 col-lg-3 mb-4">
-        <div class="card shop-card h-100 text-center shadow-sm">
-            <div class="card-body">
-                <div class="mb-3">
-                    {% if shop.logo %}
-                        <img src="{{ shop.logo.url }}" class="rounded-circle" width="60" height="60" alt="{{ shop.shop_name }}">
-                    {% else %}
-                        <i class="fas fa-store fs-1 text-primary"></i>
-                    {% endif %}
+<section class="bg-primary bg-opacity-10 py-5">
+    <div class="container py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-6 order-lg-2 animate__animated animate__fadeInLeft">
+                <div class="text-center">
+                    <i class="bi bi-shop display-1 text-primary opacity-50" style="font-size: 10rem;"></i>
                 </div>
-                <h5 class="card-title">{{ shop.shop_name }}</h5>
-                <p class="card-text text-muted small">@{{ shop.instagram_username }}</p>
-                <a href="{% url 'frontend:shop-store' shop_slug=shop.slug %}" class="btn btn-outline-primary btn-sm">مشاهده فروشگاه</a>
             </div>
-        </div>
-    </div>
-    {% empty %}
-    <div class="col-12 text-center py-5">
-        <p class="text-muted">هنوز فروشگاهی ثبت نشده است.</p>
-        <a href="{% url 'frontend:register-page' %}" class="btn btn-primary">اولین فروشگاه باشید</a>
-    </div>
-    {% endfor %}
-</div>
-
-<div class="row mt-5">
-    <div class="col-md-6">
-        <div class="card border-success mb-3">
-            <div class="card-body">
-                <h5 class="card-title text-success"><i class="fab fa-instagram"></i> برای صاحبان پیج</h5>
-                <ul class="list-unstyled mt-3">
-                    <li class="mb-2"><i class="fas fa-check-circle text-success"></i> رایگان ثبت‌نام کنید</li>
-                    <li class="mb-2"><i class="fas fa-check-circle text-success"></i> لینک اختصاصی دریافت کنید</li>
-                    <li class="mb-2"><i class="fas fa-check-circle text-success"></i> در بیو اینستاگرام قرار دهید</li>
-                    <li class="mb-2"><i class="fas fa-check-circle text-success"></i> شروع به فروش کنید</li>
-                </ul>
-                <a href="{% url 'frontend:register-page' %}" class="btn btn-success">ثبت‌نام رایگان</a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card border-primary mb-3">
-            <div class="card-body">
-                <h5 class="card-title text-primary"><i class="fas fa-shopping-bag"></i> برای مشتریان</h5>
-                <ul class="list-unstyled mt-3">
-                    <li class="mb-2"><i class="fas fa-check-circle text-primary"></i> از پیج اینستاگرام وارد شوید</li>
-                    <li class="mb-2"><i class="fas fa-check-circle text-primary"></i> محصولات را ببینید</li>
-                    <li class="mb-2"><i class="fas fa-check-circle text-primary"></i> با چند کلیک خرید کنید</li>
-                    <li class="mb-2"><i class="fas fa-check-circle text-primary"></i> پیگیری سفارش راحت</li>
-                </ul>
-                <p class="text-muted small">لینک فروشگاه را از پیج اینستاگرام مورد نظر دریافت کنید</p>
-=======
-<section class="hero-section text-center">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <span class="badge bg-white text-primary mb-3 px-3 py-2 rounded-pill">
-                    🚀 نسخه جدید اینستاستور
-                </span>
-                <h1 class="display-3 fw-bold mb-4">فروش در اینستاگرام،<br>ساده‌تر از همیشه</h1>
-                <p class="lead mb-5 opacity-75">
-                    بدون نیاز به دانش فنی، پیج اینستاگرام خود را به یک وب‌سایت فروشگاهی کامل تبدیل کنید. 
-                    لینک اختصاصی بسازید و مدیریت سفارشات را خودکار کنید.
+            <div class="col-lg-6 order-lg-1 animate__animated animate__fadeInRight">
+                <h1 class="display-4 fw-bold mb-4 text-dark">فروشگاه اینستاگرامی خود را <span class="text-primary">رایگان</span> بسازید</h1>
+                <p class="lead text-muted mb-4">
+                    بدون نیاز به دانش فنی، در کمتر از ۳۰ ثانیه شعبه آنلاین فروشگاه خود را راه اندازی کنید. 
+                    مدیریت سفارشات، درگاه پرداخت و اتصال به اینستاگرام.
                 </p>
-                <div class="d-flex gap-3 justify-content-center flex-wrap">
-                    <a href="/register/" class="btn btn-light cta-btn text-primary shadow-lg">
-                        <i class="bi bi-rocket-takeoff"></i> ساخت فروشگاه رایگان
+                <div class="d-flex gap-3">
+                    <a href="{% url 'frontend:register-page' %}" class="btn btn-primary btn-lg rounded-pill px-4 shadow-sm fw-bold">
+                        <i class="bi bi-rocket-takeoff me-2"></i> ساخت فروشگاه
                     </a>
-                    <a href="/about/" class="btn btn-outline-light cta-btn">
-                        بیشتر بدانید
+                    <a href="{% url 'frontend:login' %}" class="btn btn-outline-primary btn-lg rounded-pill px-4 fw-bold">
+                        <i class="bi bi-person me-2"></i> ورود به پنل
                     </a>
                 </div>
             </div>
@@ -149,79 +31,56 @@
     </div>
 </section>
 
-<section class="container mb-5">
-    <div class="text-center mb-5">
-        <h2 class="fw-bold">چرا اینستاستور؟</h2>
-        <p class="text-muted">ابزارهایی که برای رشد فروشگاه اینستاگرامی خود نیاز دارید</p>
-    </div>
-    
-    <div class="row g-4">
-        <div class="col-md-4">
-            <div class="card feature-card shadow-sm">
-                <div class="card-body">
-                    <div class="icon-box">
-                        <i class="bi bi-link-45deg"></i>
-                    </div>
-                    <h4 class="card-title fw-bold mb-3">لینک اختصاصی در بایو</h4>
-                    <p class="card-text text-muted">
-                        به جای پاسخ دادن به دایرکت‌ها، لینک فروشگاه خود را در بایو بگذارید تا مشتریان به راحتی محصولات را ببینند و خرید کنند.
-                    </p>
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4 text-center">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-4 hover-shadow transition">
+                    <div class="text-primary mb-3"><i class="bi bi-instagram fs-1"></i></div>
+                    <h5 class="fw-bold">اتصال به اینستاگرام</h5>
+                    <p class="text-muted small">لینک فروشگاه را در بیو بگذارید و فروش خودکار را تجربه کنید.</p>
                 </div>
             </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card feature-card shadow-sm">
-                <div class="card-body">
-                    <div class="icon-box">
-                        <i class="bi bi-clipboard-data"></i>
-                    </div>
-                    <h4 class="card-title fw-bold mb-3">مدیریت آسان سفارشات</h4>
-                    <p class="card-text text-muted">
-                        دیگر نیازی به نوشتن سفارشات در کاغذ نیست. تمام سفارشات با جزئیات کامل در پنل مدیریت شما ثبت می‌شوند.
-                    </p>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-4 hover-shadow transition">
+                    <div class="text-success mb-3"><i class="bi bi-wallet2 fs-1"></i></div>
+                    <h5 class="fw-bold">درگاه پرداخت امن</h5>
+                    <p class="text-muted small">بدون نیاز به کارت‌به‌کارت، پول مستقیماً به حساب شما واریز می‌شود.</p>
                 </div>
             </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card feature-card shadow-sm">
-                <div class="card-body">
-                    <div class="icon-box">
-                        <i class="bi bi-wallet2"></i>
-                    </div>
-                    <h4 class="card-title fw-bold mb-3">بدون کمیسیون</h4>
-                    <p class="card-text text-muted">
-                        ما در سود شما شریک نیستیم. تمام درآمد فروش متعلق به خودتان است و هیچ کارمزدی از تراکنش‌ها کسر نمی‌شود.
-                    </p>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-4 hover-shadow transition">
+                    <div class="text-warning mb-3"><i class="bi bi-speedometer2 fs-1"></i></div>
+                    <h5 class="fw-bold">مدیریت آسان</h5>
+                    <p class="text-muted small">پنل کاربری ساده برای مدیریت محصولات و سفارشات با موبایل.</p>
                 </div>
->>>>>>> e87f22df02c13fbcb3fa7b56e1455c79e7e00cb9
             </div>
         </div>
     </div>
 </section>
 
-<section class="container my-5">
-    <div class="bg-dark text-white rounded-5 p-5 text-center" 
-         style="background-image: url('https://source.unsplash.com/random/1200x400/?abstract,dark'); background-size: cover; background-blend-mode: overlay;">
-        <h2 class="fw-bold mb-3">آماده شروع هستید؟</h2>
-        <p class="mb-4 text-light opacity-75">همین حالا به جمع فروشندگان موفق اینستاستور بپیوندید</p>
-        <a href="/register/" class="btn btn-primary btn-lg rounded-pill px-5">
-            شروع کنید
-        </a>
+{% if featured_shops %}
+<section class="py-5 bg-light">
+    <div class="container">
+        <h3 class="text-center fw-bold mb-5">فروشگاه‌های برتر این هفته</h3>
+        <div class="row g-4">
+            {% for shop in featured_shops %}
+            <div class="col-md-6 col-lg-3">
+                <a href="{% url 'frontend:shop-store' shop.slug %}" class="text-decoration-none">
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                <i class="bi bi-shop text-muted fs-4"></i>
+                            </div>
+                            <h5 class="card-title text-dark fw-bold">{{ shop.shop_name }}</h5>
+                            <p class="text-muted small mb-0">@{{ shop.instagram_username }}</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
     </div>
 </section>
-
-<<<<<<< HEAD
-<script>
-    function searchShop() {
-        const query = document.getElementById('shop-search').value;
-        if(query) {
-            alert('در فاز MVP این قابلیت جستجو هنوز فعال نیست، لطفا از لیست پایین انتخاب کنید.');
-        }
-    }
-</script>
-
-=======
->>>>>>> e87f22df02c13fbcb3fa7b56e1455c79e7e00cb9
+{% endif %}
 {% endblock %}

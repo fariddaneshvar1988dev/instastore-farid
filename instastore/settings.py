@@ -168,14 +168,12 @@ LOGGING = {
         },
     },
 }
-<<<<<<< HEAD
 
 
 
 # تنظیمات درگاه پرداخت
 # این کد تست زرین‌پال است. برای نسخه واقعی باید کد اختصاصی خود را بگیرید
 ZARINPAL_MERCHANT_ID = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
-=======
 # --- این خطوط را حتما به آخر فایل settings.py اضافه کنید ---
 
 # ۱. ذخیره سشن در هر بار درخواست (برای جلوگیری از پریدن سبد خرید)
@@ -191,4 +189,3 @@ SESSION_COOKIE_AGE = 1209600
 
 # ۴. انجین سشن
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
->>>>>>> e87f22df02c13fbcb3fa7b56e1455c79e7e00cb9

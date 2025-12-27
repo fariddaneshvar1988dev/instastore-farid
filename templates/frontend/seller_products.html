@@ -3,141 +3,130 @@
 {% block title %}مدیریت محصولات - {{ shop.shop_name }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid py-4">
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
-                <h1 class="h3 mb-0"><i class="bi bi-box-seam"></i> مدیریت محصولات</h1>
-                <div><a href="{% url 'frontend:seller-product-add' %}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> افزودن محصول جدید</a></div>
+                <h1 class="h3 mb-0 fw-bold text-dark">
+                    <i class="bi bi-box-seam text-primary"></i> مدیریت محصولات
+                </h1>
+                <div>
+                    <a href="{% url 'frontend:seller-product-add' %}" class="btn btn-primary shadow-sm">
+                        <i class="bi bi-plus-circle"></i> افزودن محصول جدید
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 
-<<<<<<< HEAD
-=======
-    <!-- آمار محصولات -->
->>>>>>> e87f22df02c13fbcb3fa7b56e1455c79e7e00cb9
-    <div class="row mb-4">
+    <div class="row mb-4 g-3">
         <div class="col-md-4">
-            <div class="card bg-primary text-white">
+            <div class="card bg-primary text-white border-0 shadow-sm rounded-4">
                 <div class="card-body text-center">
-                    <h5 class="card-title">کل محصولات</h5>
+                    <h5 class="card-title opacity-75">کل محصولات</h5>
                     <p class="card-text fs-2 fw-bold">{{ products.count }}</p>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card bg-success text-white">
+            <div class="card bg-success text-white border-0 shadow-sm rounded-4">
                 <div class="card-body text-center">
-                    <h5 class="card-title">موجود</h5>
-                    <p class="card-text fs-2 fw-bold">{{ available_count }}</p>
+                    <h5 class="card-title opacity-75">موجود</h5>
+                    <p class="card-text fs-2 fw-bold">{{ available_count|default:"0" }}</p>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card bg-warning text-white">
+            <div class="card bg-warning text-white border-0 shadow-sm rounded-4">
                 <div class="card-body text-center">
-                    <h5 class="card-title">ناموجود</h5>
-                    <p class="card-text fs-2 fw-bold">{{ out_of_stock_count }}</p>
+                    <h5 class="card-title opacity-75">ناموجود</h5>
+                    <p class="card-text fs-2 fw-bold">{{ out_of_stock_count|default:"0" }}</p>
                 </div>
             </div>
         </div>
     </div>
 
-<<<<<<< HEAD
-=======
-    <!-- لیست محصولات -->
->>>>>>> e87f22df02c13fbcb3fa7b56e1455c79e7e00cb9
-    <div class="card shadow-sm">
-        <div class="card-body">
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
                         <tr>
-                            <th style="width: 60px;">تصویر</th>
+                            <th class="ps-4" style="width: 80px;">تصویر</th>
                             <th>نام محصول</th>
                             <th>قیمت</th>
                             <th>موجودی</th>
                             <th>وضعیت</th>
                             <th>تاریخ</th>
-                            <th>عملیات</th>
+                            <th class="text-end pe-4">عملیات</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for product in products %}
                         <tr>
-                            <td>
-                                <div style="width: 50px; height: 50px; overflow: hidden; border-radius: 6px;">
-<<<<<<< HEAD
-                                    <img src="{{ product.images.0|default:'/static/no-image.jpg' }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover;">
-=======
-                                    <a href="{% url 'product-detail' shop.slug product.id %}" >
+                            <td class="ps-4">
+                                <div style="width: 50px; height: 50px; overflow: hidden; border-radius: 8px;">
+                                    <a href="{% url 'frontend:product-detail' shop.slug product.id %}">
                                         <img src="{{ product.images.0|default:'/static/no-image.jpg' }}"
                                             alt="{{ product.name }}"
                                             style="width: 100%; height: 100%; object-fit: cover;">
                                     </a>
->>>>>>> e87f22df02c13fbcb3fa7b56e1455c79e7e00cb9
                                 </div>
                             </td>
                             <td>
-                                <strong>{{ product.name }}</strong>
+                                <strong class="text-dark">{{ product.name }}</strong>
                                 <br>
                                 <small class="text-muted">{{ product.category.name|default:"بدون دسته" }}</small>
                             </td>
                             <td>
-                                <span class="fw-bold">{{ product.get_price_in_toman|intcomma }}</span>
-                                <small class="text-muted d-block">تومان</small>
+                                <span class="fw-bold text-primary">{{ product.base_price|intcomma }}</span>
+                                <small class="text-muted">تومان</small>
                             </td>
 
                             <td>
                                 {% if product.total_stock > 10 %}
-                                <span class="badge bg-success">{{ product.total_stock }}</span>
+                                <span class="badge bg-success bg-opacity-10 text-success px-3">موجود ({{ product.total_stock }})</span>
                                 {% elif product.total_stock > 0 %}
-                                <span class="badge bg-warning">{{ product.total_stock }}</span>
+                                <span class="badge bg-warning bg-opacity-10 text-warning px-3">کم ({{ product.total_stock }})</span>
                                 {% else %}
-                                <span class="badge bg-danger">۰</span>
+                                <span class="badge bg-danger bg-opacity-10 text-danger px-3">ناموجود</span>
                                 {% endif %}
                             </td>
 
                             <td>
-                                {% if product.is_available %}
-                                <span class="badge bg-success">فعال</span>
+                                {% if product.is_active %}
+                                <span class="badge rounded-pill bg-success"><i class="bi bi-check-circle"></i> فعال</span>
                                 {% else %}
-                                <span class="badge bg-secondary">غیرفعال</span>
+                                <span class="badge rounded-pill bg-secondary"><i class="bi bi-dash-circle"></i> غیرفعال</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <small>{{ product.created_at|date:"Y/m/d" }}</small>
+                                <small class="text-muted">{{ product.created_at|date:"Y/m/d" }}</small>
                             </td>
-                            <td>
+                            <td class="text-end pe-4">
                                 <div class="btn-group btn-group-sm">
-<<<<<<< HEAD
-                                    <a href="{% url 'frontend:seller-product-edit' product.id %}" class="btn btn-outline-primary"><i class="bi bi-pencil"></i></a>
-                                    {% if request.user.shop %}
-                                    <a href="{% url 'frontend:shop-store' shop_slug=request.user.shop.slug %}" target="_blank" class="btn btn-outline-info"><i class="bi bi-eye"></i></a>
-                                    {% endif %}
-                                    <button class="btn btn-outline-danger" onclick="deleteProduct({{ product.id }})"><i class="bi bi-trash"></i></button>
-=======
-                                    <a href="/seller/products/{{ product.id }}/edit/" class="btn btn-outline-primary">
+                                    <a href="{% url 'frontend:seller-product-edit' product.id %}" class="btn btn-outline-primary" title="ویرایش">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    <a href="/shop/{{ shop.slug }}/product/{{ product.id }}/"
-                                        class="btn btn-outline-info">
+                                    <a href="{% url 'frontend:product-detail' shop.slug product.id %}" target="_blank" class="btn btn-outline-info" title="مشاهده">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <button class="btn btn-outline-danger" onclick="deleteProduct('{{ product.id }}')">
+                                    <button class="btn btn-outline-danger" onclick="deleteProduct('{{ product.id }}')" title="حذف">
                                         <i class="bi bi-trash"></i>
                                     </button>
->>>>>>> e87f22df02c13fbcb3fa7b56e1455c79e7e00cb9
                                 </div>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
                             <td colspan="7" class="text-center py-5">
-                                <i class="bi bi-inbox fs-1 text-muted"></i>
-                                <p class="text-muted mt-3">هنوز محصولی اضافه نکرده‌اید</p>
-                                <a href="{% url 'frontend:seller-product-add' %}" class="btn btn-primary">افزودن اولین محصول</a>
+                                <div class="text-muted opacity-50 mb-3">
+                                    <i class="bi bi-inbox fs-1"></i>
+                                </div>
+                                <p class="text-muted">هنوز محصولی اضافه نکرده‌اید</p>
+                                <a href="{% url 'frontend:seller-product-add' %}" class="btn btn-primary btn-sm rounded-pill px-4">
+                                    افزودن اولین محصول
+                                </a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -149,34 +138,25 @@
 </div>
 
 <script>
-<<<<<<< HEAD
-function deleteProduct(productId) {
-    if (confirm('آیا از حذف این محصول اطمینان دارید؟')) {
-        fetch(`/seller/products/${productId}/delete/`, {
-            method: 'DELETE',
-            headers: { 'X-CSRFToken': '{{ csrf_token }}' }
-        })
-        .then(response => {
-            if (response.ok) {
-                location.reload();
-            }
-        });
-=======
     function deleteProduct(productId) {
-        if (confirm('آیا از حذف این محصول اطمینان دارید؟')) {
+        if (confirm('آیا از حذف این محصول اطمینان دارید؟ این عملیات غیرقابل بازگشت است.')) {
+            // استفاده از آدرس نسبی صحیح برای API حذف
             fetch(`/seller/products/${productId}/delete/`, {
                 method: 'DELETE',
                 headers: {
-                    'X-CSRFToken': '{{ csrf_token }}'
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
                 }
             })
-                .then(response => {
-                    if (response.ok) {
-                        location.reload();
-                    }
-                });
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('خطا در حذف محصول.');
+                }
+            })
+            .catch(error => console.error('Error:', error));
         }
->>>>>>> e87f22df02c13fbcb3fa7b56e1455c79e7e00cb9
     }
 </script>
 {% endblock %}

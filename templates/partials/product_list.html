@@ -1,51 +1,61 @@
 {% load humanize %}
 
-<div class="row row-cols-1 row-cols-md-3 g-4" id="product-list">
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="products-grid">
     {% for product in products %}
     <div class="col">
-        <div class="card h-100 shadow-sm">
-            {% if product.images %}
-            <img src="{{ product.images.0 }}" class="card-img-top" alt="{{ product.name }}" style="height: 250px; object-fit: cover;">
-            {% else %}
-            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 250px;">
-                <span class="text-muted">بدون تصویر</span>
-            </div>
-            {% endif %}
-            
-            <div class="card-body d-flex flex-column">
-                <h5 class="card-title text-truncate">{{ product.name }}</h5>
-                <p class="card-text small text-muted">{{ product.shop.shop_name }}</p>
+        <a href="{% url 'frontend:product-detail' shop_slug=shop.slug product_id=product.id %}" class="text-decoration-none text-dark">
+            <div class="card h-100 product-card shadow-sm border-0 rounded-4 overflow-hidden hover-shadow transition">
                 
-                <div class="mt-auto d-flex justify-content-between align-items-center">
-                    <span class="fw-bold text-primary">{{ product.price|intcomma }} ریال</span>
-                    
-                    {% if product.is_in_stock %}
-                    <a href="{% url 'product-detail' product.shop.slug product.id %}" class="btn btn-sm btn-outline-primary">
-                        مشاهده و خرید
-                    </a>
+                <div class="position-relative" style="height: 220px; background-color: #f8f9fa;">
+                    {% if product.images %}
+                        <img src="{{ product.images.0 }}" 
+                             class="card-img-top h-100 w-100" 
+                             alt="{{ product.name }}"
+                             style="object-fit: cover;">
                     {% else %}
-                    <span class="badge bg-secondary">ناموجود</span>
+                        <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                            <i class="bi bi-image fs-1 opacity-25"></i>
+                        </div>
+                    {% endif %}
+                    
+                    {% if not product.total_stock > 0 %}
+                        <span class="position-absolute top-0 start-0 m-2 badge bg-secondary rounded-pill">ناموجود</span>
                     {% endif %}
                 </div>
+                
+                <div class="card-body d-flex flex-column p-3">
+                    <h6 class="card-title fw-bold text-truncate mb-1">{{ product.name }}</h6>
+                    <small class="text-muted mb-3">{{ product.category.name|default:"عمومی" }}</small>
+                    
+                    <div class="mt-auto d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-bold text-primary fs-5">
+                                {{ product.base_price|intcomma }}
+                            </span>
+                            <small class="text-muted" style="font-size: 0.7rem;">تومان</small>
+                        </div>
+                        
+                        <button class="btn btn-sm btn-light rounded-circle text-primary">
+                            <i class="bi bi-arrow-left"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
     {% empty %}
-    <div class="col-12 text-center py-5">
-        <p class="text-muted">محصولی یافت نشد.</p>
+    <div class="col-12 text-center py-5 animate__animated animate__fadeIn">
+        <div class="mb-3">
+            <i class="bi bi-search fs-1 text-muted opacity-50"></i>
+        </div>
+        <h5 class="text-muted fw-bold">محصولی یافت نشد!</h5>
+        <p class="text-muted small">برای عبارت جستجو شده یا دسته‌بندی انتخاب شده محصولی وجود ندارد.</p>
+        
+        {% if request.GET.q or request.GET.category %}
+        <a href="{% url 'frontend:shop-store' shop_slug=shop.slug %}" class="btn btn-outline-primary rounded-pill px-4 mt-2">
+            مشاهده همه محصولات
+        </a>
+        {% endif %}
     </div>
     {% endfor %}
 </div>
-
-{% if page_obj.has_next %}
-<div class="text-center mt-4" id="load-more-container">
-    <button class="btn btn-outline-secondary" 
-            hx-get="{% url 'load-more' view.kwargs.shop_slug %}?page={{ page_obj.next_page_number }}"
-            hx-target="#product-list" 
-            hx-swap="beforeend"
-            hx-select=".col"
-            onclick="this.remove()">
-        نمایش بیشتر
-    </button>
-</div>
-{% endif %}

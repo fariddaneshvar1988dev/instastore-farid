@@ -3,45 +3,58 @@
 {% block title %}ورود به حساب کاربری | InstaStore{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-6 col-lg-4">
-        <div class="card shadow-sm border-0 rounded-4">
-            <div class="card-body p-4">
-                <h3 class="text-center mb-4 fw-bold text-primary">ورود به پنل</h3>
-                
-                <form method="post">
-                    {% csrf_token %}
-                    
-                    {% if form.errors %}
-                        <div class="alert alert-danger py-2 mb-3">
-                            <small>نام کاربری یا رمز عبور اشتباه است.</small>
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow border-0 rounded-4 animate__animated animate__fadeInDown">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                            <i class="bi bi-person-circle fs-2"></i>
                         </div>
-                    {% endif %}
-                    
-                    <div class="mb-3">
-                        <label for="id_username" class="form-label text-muted">نام کاربری</label>
-                        <input type="text" name="username" class="form-control" 
-                               id="id_username" required placeholder="مثلاً user_123">
+                        <h3 class="fw-bold text-primary">ورود به پنل</h3>
                     </div>
                     
-                    <div class="mb-3">
-                        <label for="id_password" class="form-label text-muted">رمز عبور</label>
-                        <input type="password" name="password" class="form-control" 
-                               id="id_password" required placeholder="******">
-                    </div>
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                            <div class="alert alert-danger py-2 mb-3 shadow-sm border-0">
+                                <small><i class="bi bi-x-circle-fill me-1"></i> نام کاربری یا رمز عبور اشتباه است.</small>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="id_username" class="form-label text-muted small">نام کاربری</label>
+                            <div class="input-group" dir="ltr">
+                                <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                                <input type="text" name="username" class="form-control" 
+                                       id="id_username" required placeholder="user_123">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_password" class="form-label text-muted small">رمز عبور</label>
+                            <div class="input-group" dir="ltr">
+                                <span class="input-group-text bg-light"><i class="bi bi-key"></i></span>
+                                <input type="password" name="password" class="form-control" 
+                                       id="id_password" required placeholder="******">
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill fw-bold shadow-sm">
+                                <i class="bi bi-box-arrow-in-right me-2"></i> ورود
+                            </button>
+                        </div>
+                    </form>
                     
-                    <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary py-2 fw-bold">
-                            ورود
-                        </button>
+                    <div class="text-center mt-4 pt-3 border-top">
+                        <small class="text-muted">حساب ندارید؟</small>
+                        <a href="{% url 'frontend:register-page' %}" class="text-decoration-none fw-bold text-primary">
+                            ثبت‌نام فروشگاه جدید
+                        </a>
                     </div>
-                </form>
-                
-                <div class="text-center mt-3">
-                    <small class="text-muted">حساب ندارید؟</small>
-                    <a href="{% url 'register-page' %}" class="text-decoration-none fw-bold">
-                        ثبت‌نام فروشگاه جدید
-                    </a>
                 </div>
             </div>
         </div>
