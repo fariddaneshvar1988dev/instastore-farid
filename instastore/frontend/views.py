@@ -2,25 +2,23 @@ import logging
 import json
 from django.conf import settings
 from django.db.models.functions import Coalesce
-
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import TemplateView, CreateView, UpdateView, DetailView, View
-from django.http import JsonResponse, Http404, HttpResponseForbidden
+from django.http import JsonResponse, Http404
 from django.views.decorators.http import require_http_methods, require_POST
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.core.files.storage import FileSystemStorage
-from django.db.models import Sum, Count
+from django.db.models import Sum
 from django.contrib.auth import login, logout, authenticate
 from django.db import transaction
 from django.utils import timezone
 
-from shops.models import Shop, Plan
+from shops.models import Shop
 from products.models import Product, Category, ProductVariant
 from orders.models import Order, OrderItem
-from customers.models import Customer
 from .forms import ProductForm, SellerRegisterForm, ShopSettingsForm
 from .cart import Cart
 
@@ -35,19 +33,17 @@ class HomeView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # بررسی وجود فروشگاه برای کاربران لاگین شده
-        if self.request.user.is_authenticated and hasattr(self.request.user, 'shop'):
-            shop = self.request.user.shop
-            products = Product.objects.filter(shop=shop).annotate(
-                db_stock=Coalesce(Sum('variants__stock'), 0)
-            ).order_by('-created_at')
+        products = Product.objects.filter(is_active=True).annotate(
+            db_stock=Coalesce(Sum('variants__stock'), 0)
+        ).order_by('-created_at')
 
-            context.update({
-                'products': products[:8],
-                'shop': shop,
-                'available_count': products.filter(db_stock__gt=0).count(),
-                'out_of_stock_count': products.filter(db_stock=0).count(),
-            })
+        if self.request.user.is_authenticated and hasattr(self.request.user, 'shop'):
+            context['shop'] = self.request.user.shop
+
+        context.update({
+            'products': products[:12],
+            'available_count': products.filter(db_stock__gt=0).count(),
+        })
         return context
 
 def about_page(request):
@@ -59,10 +55,9 @@ def contact_page(request):
 @method_decorator(login_required, name='dispatch')
 class ProfileView(TemplateView):
     template_name = 'frontend/profile.html'
-
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # ارسال اطلاعات فروشگاه به قالب پروفایل برای رفع مشکل نمایش
         context['shop'] = getattr(self.request.user, 'shop', None)
         return context
 
@@ -127,8 +122,8 @@ class ShopStoreView(TemplateView):
         shop = get_object_or_404(Shop, slug=shop_slug, is_active=True)
         context = super().get_context_data(**kwargs)
         context['shop'] = shop
-        products = Product.objects.filter(shop=shop, is_active=True)
         
+        products = Product.objects.filter(shop=shop, is_active=True)
         category_slug = self.request.GET.get('category')
         if category_slug:
             products = products.filter(category__slug=category_slug)
@@ -151,13 +146,14 @@ class ProductDetailView(TemplateView):
         product = get_object_or_404(Product, id=product_id, shop=shop, is_active=True)
 
         context = super().get_context_data(**kwargs)
-        context.update({
-            'shop': shop,
-            'product': product,
-            'variants': product.variants.filter(stock__gt=0)
-        })
+        context['shop'] = shop
+        context['product'] = product
+        context['variants'] = product.variants.filter(stock__gt=0)
         
-        variants_data = [{'id': v.id, 'color': v.color, 'size': v.size, 'stock': v.stock, 'price_adj': float(v.price_adjustment)} for v in context['variants']]
+        variants_data = [{
+            'id': v.id, 'color': v.color, 'size': v.size, 
+            'stock': v.stock, 'price_adj': float(v.price_adjustment)
+        } for v in context['variants']]
         context['variants_json'] = json.dumps(variants_data)
         return context
 
@@ -173,6 +169,7 @@ class CheckoutView(View):
     def post(self, request, shop_slug):
         shop = get_object_or_404(Shop, slug=shop_slug, is_active=True)
         cart = Cart(request)
+        
         if cart.get_total_items() == 0:
             messages.warning(request, "سبد خرید خالی است.")
             return redirect('frontend:shop-store', shop_slug=shop.slug)
@@ -197,17 +194,23 @@ class CheckoutView(View):
                             raise Exception(f"موجودی کالای '{item['product'].name}' کافی نیست.")
                         variant.stock -= item['quantity']
                         variant.save()
+                        
                         OrderItem.objects.create(
                             order=order, variant=variant, product_name=item['product'].name,
                             quantity=item['quantity'], unit_price=item['price'], total_price=item['total_price']
                         )
+
                 cart.clear()
-                messages.success(request, f"سفارش #{order.order_id} ثبت شد.")
+                messages.success(request, f"سفارش شماره #{order.order_id} با موفقیت ثبت شد.")
                 return redirect('frontend:shop-store', shop_slug=shop.slug)
+
         except Exception as e:
             logger.error(f"Checkout Error: {e}")
             messages.error(request, str(e))
             return redirect('frontend:checkout', shop_slug=shop.slug)
+
+class OrderTrackingView(TemplateView):
+    template_name = 'frontend/track_order.html'
 
 # ==========================================================
 # 4. پنل فروشنده (Seller Dashboard)
@@ -227,12 +230,14 @@ class SellerRegisterView(CreateView):
         user = form.save()
         login(self.request, user)
         shop = Shop.objects.create(
-            user=user, shop_name=form.cleaned_data['shop_name'],
-            slug=form.cleaned_data['shop_slug'], instagram_username=form.cleaned_data['instagram_username']
+            user=user,
+            shop_name=form.cleaned_data['shop_name'],
+            slug=form.cleaned_data['shop_slug'],
+            instagram_username=form.cleaned_data['instagram_username']
         )
         shop.plan_expires_at = timezone.now() + timezone.timedelta(days=30)
         shop.save()
-        messages.success(self.request, "فروشگاه ساخته شد.")
+        messages.success(self.request, "فروشگاه با موفقیت ساخته شد.")
         return redirect(self.success_url)
 
 def user_login_view(request):
@@ -287,6 +292,7 @@ class SellerProductsView(TemplateView):
         products = Product.objects.filter(shop=shop).annotate(
             db_stock=Coalesce(Sum('variants__stock'), 0)
         ).order_by('-created_at')
+
         context.update({
             'products': products,
             'shop': shop,
@@ -310,18 +316,27 @@ class SellerProductCreateView(CreateView):
     def form_valid(self, form):
         product = form.save(commit=False)
         product.shop = self.request.user.shop
+        
         fs = FileSystemStorage()
         if self.request.FILES.get('image1'):
             filename = fs.save(f"products/{self.request.FILES['image1'].name}", self.request.FILES['image1'])
             product.images = [fs.url(filename)]
+            
         product.save()
         
-        colors, sizes, stocks, prices = [self.request.POST.getlist(key) for key in ['vars_color[]', 'vars_size[]', 'vars_stock[]', 'vars_price[]']]
+        colors = self.request.POST.getlist('vars_color[]')
+        sizes = self.request.POST.getlist('vars_size[]')
+        stocks = self.request.POST.getlist('vars_stock[]')
+        prices = self.request.POST.getlist('vars_price[]')
+        
         if colors:
             for c, s, st, p in zip(colors, sizes, stocks, prices):
-                ProductVariant.objects.create(product=product, color=c, size=s, stock=int(st), price_adjustment=int(p) if p else 0)
+                ProductVariant.objects.create(
+                    product=product, color=c, size=s, 
+                    stock=int(st), price_adjustment=int(p) if p else 0
+                )
         
-        messages.success(self.request, "محصول ایجاد شد.")
+        messages.success(self.request, "محصول با موفقیت ایجاد شد.")
         return redirect(self.success_url)
 
 @method_decorator(login_required, name='dispatch')
@@ -338,10 +353,32 @@ class SellerProductUpdateView(UpdateView):
         kwargs = super().get_form_kwargs()
         kwargs['shop'] = self.request.user.shop
         return kwargs
-    
-    def form_valid(self, form):
-        messages.success(self.request, "محصول با موفقیت بروزرسانی شد.")
-        return super().form_valid(form)
+
+@require_http_methods(["POST", "DELETE"])
+@login_required
+def delete_product(request, pk):
+    shop = request.user.shop
+    product = get_object_or_404(Product, pk=pk, shop=shop)
+    product.delete()
+    return JsonResponse({'success': True})
+
+@method_decorator(login_required, name='dispatch')
+class SellerOrdersView(TemplateView):
+    template_name = 'frontend/seller_orders.html'
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        shop = self.request.user.shop
+        context['orders'] = Order.objects.filter(shop=shop).order_by('-created_at')
+        context['shop'] = shop
+        return context
+
+@method_decorator(login_required, name='dispatch')
+class SellerOrderDetailView(DetailView):
+    model = Order
+    template_name = 'frontend/seller_order_detail.html'
+    context_object_name = 'order'
+    def get_queryset(self):
+        return Order.objects.filter(shop=self.request.user.shop)
 
 @method_decorator(login_required, name='dispatch')
 class ShopSettingsView(UpdateView):
@@ -349,7 +386,10 @@ class ShopSettingsView(UpdateView):
     form_class = ShopSettingsForm
     template_name = 'frontend/seller_settings.html'
     success_url = reverse_lazy('frontend:seller-settings')
-    def get_object(self): return self.request.user.shop
+    
+    def get_object(self):
+        return self.request.user.shop
+    
     def form_valid(self, form):
-        messages.success(self.request, "تنظیمات ذخیره شد.")
+        messages.success(self.request, "تنظیمات با موفقیت ذخیره شد.")
         return super().form_valid(form)
