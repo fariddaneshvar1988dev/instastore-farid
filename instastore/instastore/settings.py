@@ -114,9 +114,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # --- تنظیمات احراز هویت ---
 # مسیر هدایت پس از ورود موفق
-LOGIN_REDIRECT_URL = 'seller-dashboard'
-# مسیر هدایت پس از خروج
-LOGOUT_REDIRECT_URL = 'home'
+LOGIN_REDIRECT_URL = 'frontend:seller-dashboard'
+LOGOUT_REDIRECT_URL = 'frontend:home'  # اضافه کردن اسم اپلیکیشن قبل از نام مسیر
 # آدرس صفحه لاگین
 LOGIN_URL = 'login'
 
