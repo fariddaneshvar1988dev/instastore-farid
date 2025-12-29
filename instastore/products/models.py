@@ -29,14 +29,16 @@ class Product(models.Model):
     # ویژگی‌های عمومی
     brand = models.CharField(max_length=100, blank=True, verbose_name='برند')
     material = models.CharField(max_length=100, blank=True, verbose_name='جنس')
-    images = models.JSONField(default=list, verbose_name='تصاویر محصول')
+
     views = models.PositiveIntegerField(default=0, verbose_name='تعداد بازدید')
     
     is_active = models.BooleanField(default=True, verbose_name='فعال/غیرفعال')
     
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='تاریخ ایجاد')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='آخرین بروزرسانی')
-    
+    def __str__(self):
+        return f"{self.name} - {self.shop.shop_name}"
+
     class Meta:
         verbose_name = 'محصول'
         verbose_name_plural = 'محصولات'
@@ -48,6 +50,13 @@ class Product(models.Model):
     
     def __str__(self):
         return f"{self.name} - {self.shop.shop_name}"
+    
+    @property
+    def main_image(self):
+        first_image = self.images.first() # توجه: اینجا images اشاره به مدل جدید دارد (related_name)
+        if first_image:
+            return first_image.image.url
+        return None
     
     @property
     def price(self):
@@ -72,6 +81,7 @@ class Product(models.Model):
     def available_colors(self):
         """لیست رنگ‌های موجود برای فیلتر"""
         return self.variants.filter(stock__gt=0).values_list('color', flat=True).distinct()
+
 
 class ProductVariant(models.Model):
     """
@@ -111,3 +121,14 @@ class ProductVariant(models.Model):
             self.refresh_from_db()
             return True
         return False
+    
+    
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images', verbose_name='محصول')
+    image = models.ImageField(upload_to='products/%Y/%m/', verbose_name='تصویر')
+    alt_text = models.CharField(max_length=200, blank=True, null=True, verbose_name='متن جایگزین')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'تصویر محصول'
+        verbose_name_plural = 'تصاویر محصول'

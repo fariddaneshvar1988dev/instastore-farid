@@ -3,8 +3,9 @@ from .models import Customer
 import re
 
 class CustomerSerializer(serializers.ModelSerializer):
-    """Serializer برای مشتری"""
-    phone_number = serializers.CharField(max_length=15, required=True)
+    """Serializer کامل برای نمایش و ویرایش مشتری"""
+    # این فیلد را required=False می‌کنیم چون ممکن است در آپدیت ارسال نشود
+    phone_number = serializers.CharField(max_length=15, required=False)
     
     class Meta:
         model = Customer
@@ -19,17 +20,19 @@ class CustomerSerializer(serializers.ModelSerializer):
         ]
     
     def validate_phone_number(self, value):
-        """اعتبارسنجی شماره تلفن"""
+        """اعتبارسنجی شماره تلفن ایران"""
         # حذف فاصله و کاراکترهای غیرعددی
         phone = re.sub(r'\D', '', value)
         
-        # بررسی طول شماره
-        if len(phone) != 11:
-            raise serializers.ValidationError("شماره تلفن باید ۱۱ رقم باشد")
+        # بررسی طول شماره (با احتساب 0 اول یا 98)
+        if len(phone) == 10 and not value.startswith('0'):
+             phone = '0' + phone # افزودن صفر اگر کاربر یادش رفته
         
-        # بررسی شروع با ۰۹
+        if len(phone) != 11:
+            raise serializers.ValidationError("شماره تلفن باید ۱۱ رقم باشد (مثال: 09123456789)")
+        
         if not phone.startswith('09'):
-            raise serializers.ValidationError("شماره تلفن باید با ۰۹ شروع شود")
+            raise serializers.ValidationError("شماره تلفن معتبر نیست.")
         
         return phone
 

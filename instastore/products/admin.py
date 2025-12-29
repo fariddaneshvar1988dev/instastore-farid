@@ -1,6 +1,15 @@
 from django.contrib import admin
-from .models import Category, Product, ProductVariant
+from .models import Category, Product, ProductVariant, ProductImage
 
+# ۱. مدیریت تصاویر به صورت Inline (داخل صفحه محصول)
+class ProductImageInline(admin.TabularInline):
+    model = ProductImage
+    extra = 1  # یک ردیف خالی برای آپلود عکس جدید نشان می‌دهد
+    fields = ('image', 'alt_text')
+    verbose_name = "تصویر محصول"
+    verbose_name_plural = "گالری تصاویر"
+
+# ۲. مدیریت تنوع (سایز/رنگ)
 class ProductVariantInline(admin.TabularInline):
     model = ProductVariant
     extra = 1
@@ -20,10 +29,10 @@ class ProductAdmin(admin.ModelAdmin):
     list_filter = ('is_active', 'category', 'created_at')
     search_fields = ('name', 'description', 'shop__shop_name')
     readonly_fields = ('views', 'created_at', 'updated_at')
-    list_editable = ('is_active',) # stock حذف شد چون دیگر در این جدول نیست
+    list_editable = ('is_active',)
     
-    # اضافه کردن بخش مدیریت سایز و رنگ
-    inlines = [ProductVariantInline]
+    # اضافه کردن هر دو Inline (تنوع + تصاویر) به صفحه محصول
+    inlines = [ProductVariantInline, ProductImageInline]
     
     fieldsets = (
         ('اطلاعات اصلی', {
@@ -36,9 +45,7 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': ('brand', 'material'),
             'classes': ('collapse',)
         }),
-        ('تصاویر', {
-            'fields': ('images',)
-        }),
+        # نکته مهم: بخش "تصاویر" را از اینجا حذف کردیم چون الان پایین صفحه به صورت Inline می‌آید
         ('آمار', {
             'fields': ('views',),
             'classes': ('collapse',)
