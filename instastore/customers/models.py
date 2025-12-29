@@ -1,13 +1,27 @@
 from django.db import models
-
-# Create your models here.
-from django.db import models
+from django.contrib.auth.models import User  
 import uuid
 
 class Customer(models.Model):
     """
     مدل مشتری - نیازی به ثبت‌نام دارد، فقط شماره تلفن کافیست
     """
+    # اضافه کردن اتصال به یوزر جنگو
+    user = models.OneToOneField(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='customer_profile',
+        verbose_name='کاربر مرتبط'
+    )
+
+    phone_number = models.CharField(
+        max_length=15,
+        unique=True,  # نکته مهم: این ممکن است برای کاربران مهمان تکراری چالش‌ساز شود
+        verbose_name='شماره تلفن'
+    )
+    
     # شناسه یکتا برای مشتری
     id = models.UUIDField(
         primary_key=True,

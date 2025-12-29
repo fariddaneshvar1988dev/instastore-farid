@@ -217,11 +217,3 @@ REST_FRAMEWORK = {
 
 # Zarinpal payment gateway
 ZARINPAL_MERCHANT_ID = os.environ.get('ZARINPAL_MERCHANT_ID', 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx')
-
-
-
-# ۴. معماری مشتریان (Customer vs User)
-
-# شما یک مدل Customer اختصاصی دارید که به User جنگو متصل نیست.
-
-# نکته: اگر قرار است در آینده لاگین با رمز عبور داشته باشید (که در settings.py احراز هویت DRF را دیدم)، باید راهی برای اتصال User (سیستم لاگین جنگو) به Customer (پروفایل فروشگاهی) پیدا کنیم. فعلاً برای شروع مشکلی نیست.
