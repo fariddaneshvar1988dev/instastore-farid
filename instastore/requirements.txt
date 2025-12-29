@@ -5,6 +5,7 @@ Django==5.2.9
 django-filter==25.2
 djangorestframework==3.16.1
 drf-yasg==1.21.11
+gunicorn==23.0.0
 idna==3.11
 inflection==0.5.1
 packaging==25.0
@@ -17,3 +18,13 @@ typing_extensions==4.15.0
 tzdata==2025.3
 uritemplate==4.2.0
 urllib3==2.6.2
+
+
+
+whitenoise==6.6.0
+
+python-dotenv==1.0.0
+
+django-cors-headers==4.3.0
+
+psycopg2-binary==2.9.9
