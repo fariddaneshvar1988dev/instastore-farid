@@ -1,0 +1,22 @@
+server {
+    listen 80;
+    server_name 46.249.102.205;
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    
+    # آدرس فایل‌های استاتیک که جمع کردیم
+    location /static/ {
+        root /home/instastore-farid/instastore/static_root; 
+    }
+
+    # آدرس فایل‌های مدیا (عکس‌های آپلودی)
+    location /media/ {
+        root /home/instastore-farid/instastore/media;
+    }
+
+    # تنظیمات وصل شدن به Gunicorn (از طریق سوکت)
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/home/instastore-farid/instastore/instastore.sock;
+    }
+}

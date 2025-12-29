@@ -13,10 +13,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-*5i11fm+znb48@%q&^@a#+^dbt(h5kllya00ny^%wrl81xnxec'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG =   False
 
 # اجازه دسترسی از همه آدرس‌ها (برای محیط توسعه)
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['instavitrin.ir'  , '46.249.102.205'  , 'localhost']
 
 
 # Application definition
@@ -107,6 +107,10 @@ STATIC_URL = 'static/'
 
 # تنظیمات فایل‌های آپلودی (Media)
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+STATIC_URL = 'static/'
+
+# این خط برای سرور حیاتی است:
+STATIC_ROOT = os.path.join(BASE_DIR, 'static_root')
 MEDIA_URL = '/media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
