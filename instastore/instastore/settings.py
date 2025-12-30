@@ -3,27 +3,32 @@ Django settings for instastore project.
 Optimized for Production Environment.
 """
 
+"""
+Django settings for instastore project.
+Optimized for Production Environment by DevOps Team.
+"""
+
 from pathlib import Path
 import os
+from dotenv import load_dotenv  # اضافه شده
+
+# بارگذاری متغیرها از فایل .env
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# TODO: کلید را از متغیر محیطی بگیرید
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-*5i11fm+znb48@%q&^@a#+^dbt(h5kllya00ny^%wrl81xnxec')
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True  
+# اگر در فایل env چیزی نباشد، پیش‌فرض False (امن) در نظر گرفته می‌شود
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-# دامنه‌های مجاز
-ALLOWED_HOSTS = [
-    'instavitrin.ir',
-    'www.instavitrin.ir',
-    '46.249.102.205',
-    'localhost',
-    '127.0.0.1',
-]
+# دامنه‌های مجاز را از env می‌خواند و تبدیل به لیست می‌کند
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1').split(',')
+
+
 
 # Application definition
 INSTALLED_APPS = [
