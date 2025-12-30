@@ -18,14 +18,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            # 1. رفتن به پوشه پروژه در سرور
             cd /root/instastore-farid/instastore 
-
-            # 2. دریافت آخرین تغییرات از گیت
             git pull origin main
-
-            # 3. پایین آوردن کانتینرها (برای اطمینان)
-            docker-compose down
-
-            # 4. بالا آوردن مجدد با بیلد جدید
-            docker-compose up -d --build
+            docker compose down
+            docker compose up -d --build
