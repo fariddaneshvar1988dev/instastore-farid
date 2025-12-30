@@ -38,3 +38,26 @@ services:
 
 volumes:
   postgres_data:
+
+
+
+# سرویس مانیتورینگ (Prometheus)
+
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - web
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin  # رمز ورود به گرافانا
+    depends_on:
+      - prometheus
