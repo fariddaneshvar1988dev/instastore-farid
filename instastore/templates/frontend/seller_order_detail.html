@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}جزئیات سفارش {{ order.order_id }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>جزئیات سفارش <span class="text-muted">#{{ order.order_id }}</span></h3>
+        <a href="{% url 'frontend:seller-orders' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-right"></i> بازگشت به لیست
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0 card-title fs-6"><i class="bi bi-person"></i> اطلاعات مشتری</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>نام:</strong> {{ order.customer_name }}</p>
+                    <p class="mb-2"><strong>تلفن:</strong> <a href="tel:{{ order.customer_phone }}" class="text-decoration-none">{{ order.customer_phone }}</a></p>
+                    <p class="mb-0"><strong>آدرس ارسال:</strong><br>{{ order.shipping_address }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0 card-title fs-6"><i class="bi bi-info-circle"></i> وضعیت سفارش</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <strong>وضعیت فعلی:</strong>
+                        <span class="badge 
+                            {% if order.status == 'pending' %}bg-warning
+                            {% elif order.status == 'cancelled' %}bg-danger
+                            {% elif order.status == 'delivered' %}bg-success
+                            {% else %}bg-info{% endif %} fs-6">
+                            {{ order.get_status_display_fa }}
+                        </span>
+                    </p>
+                    <p class="mb-2"><strong>تاریخ ثبت:</strong> {{ order.created_at|date:"Y/m/d H:i" }}</p>
+                    <p class="mb-0"><strong>روش پرداخت:</strong> {{ order.get_payment_method_display }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 card-title fs-6">اقلام سفارش داده شده</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col" style="width: 100px;">تصویر</th>
+                        <th scope="col">محصول</th>
+                        <th scope="col">مشخصات</th>
+                        <th scope="col" class="text-center">تعداد</th>
+                        <th scope="col">قیمت واحد</th>
+                        <th scope="col">جمع کل</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order.items.all %}
+                    <tr>
+                        <td>
+                            {% if item.variant.product.images.exists %}
+                                <img src="{{ item.variant.product.images.first.image.url }}" alt="{{ item.variant.product.name }}" class="img-fluid rounded" style="max-height: 60px; object-fit: cover;">
+                            {% else %}
+                                <div class="bg-light d-flex align-items-center justify-content-center rounded text-muted" style="width: 60px; height: 60px;">
+                                    <small>بدون عکس</small>
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'frontend:product-detail' order.shop.slug item.variant.product.id %}" class="fw-bold text-decoration-none text-dark">
+                                {{ item.variant.product.name }}
+                            </a>
+                        </td>
+                        <td>
+                            {% if item.variant.color %}
+                            <span class="badge bg-secondary me-1">{{ item.variant.color }}</span>
+                            {% endif %}
+                            {% if item.variant.size %}
+                            <span class="badge bg-light text-dark border">{{ item.variant.size }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center fs-5">{{ item.quantity }}</td>
+                        <td>{{ item.unit_price|intcomma }} <small class="text-muted">تومان</small></td>
+                        <td class="fw-bold">{{ item.total_price|intcomma }} <small class="text-muted">تومان</small></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="bg-light">
+                    <tr>
+                        <td colspan="5" class="text-end fw-bold py-3">مبلغ قابل پرداخت:</td>
+                        <td class="fw-bold text-success fs-5 py-3">{{ order.total_amount|intcomma }} تومان</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    
+    <div class="d-flex gap-2 justify-content-end mb-5">
+        <button class="btn btn-primary" onclick="alert('این قابلیت در آپدیت بعدی فعال می‌شود!')">
+            <i class="bi bi-printer"></i> چاپ فاکتور
+        </button>
+    </div>
+</div>
+{% endblock %}

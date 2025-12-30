@@ -6,12 +6,10 @@ from products.models import ProductVariant
 import re
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    """Serializer برای نمایش آیتم‌های سفارش"""
     product_name = serializers.CharField(read_only=True)
     size = serializers.CharField(read_only=True)
     color = serializers.CharField(read_only=True)
     
-    # برای ورودی: آی‌دیِ واریانت (مثلاً ترکیب قرمز-XL) را می‌گیریم
     variant_id = serializers.PrimaryKeyRelatedField(
         queryset=ProductVariant.objects.all(),
         source='variant',
@@ -27,11 +25,8 @@ class OrderItemSerializer(serializers.ModelSerializer):
         read_only_fields = ['product_name', 'size', 'color', 'unit_price', 'total_price']
 
 class OrderSerializer(serializers.ModelSerializer):
-    """Serializer اصلی سفارش با قابلیت ثبت‌نام خودکار"""
     items = OrderItemSerializer(many=True, read_only=True)
-    
-    # ورودی‌های مخصوص ساخت سفارش (که در دیتابیس Order نیستند)
-    customer_phone = serializers.CharField(write_only=True, required=True, max_length=15)
+    customer_phone = serializers.CharField(write_only=True, required=True, max_length=20)
     items_data = serializers.ListField(child=serializers.DictField(), write_only=True, required=True)
     
     class Meta:
@@ -44,30 +39,33 @@ class OrderSerializer(serializers.ModelSerializer):
         read_only_fields = ['order_id', 'status', 'total_amount', 'created_at']
 
     def validate_customer_phone(self, value):
-        """اعتبارسنجی ساده شماره تماس در سفارش"""
+        """
+        تبدیل اعداد فارسی/عربی به انگلیسی و اعتبارسنجی
+        """
+        if not value:
+            raise serializers.ValidationError("شماره تماس الزامی است.")
+            
+        # تبدیل اعداد فارسی و عربی به انگلیسی
+        translation_table = str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩', '01234567890123456789')
+        value = value.translate(translation_table)
+        
+        # حذف هر چیزی غیر از عدد
         phone = re.sub(r'\D', '', value)
+        
         if len(phone) < 10:
-            raise serializers.ValidationError("شماره تماس نامعتبر است.")
+            raise serializers.ValidationError("شماره تماس معتبر نیست (حداقل ۱۰ رقم).")
+        
         return phone
 
     def create(self, validated_data):
-        """
-        منطق ثبت سفارش:
-        ۱. جدا کردن داده‌های اضافی (items_data)
-        ۲. پیدا کردن یا ساختن مشتری
-        ۳. تشخیص فروشگاه
-        ۴. ثبت سفارش
-        """
-        # مهم: این فیلدها را از دیکشنری خارج می‌کنیم تا به مدل Order پاس داده نشوند
         items_data = validated_data.pop('items_data')
         phone = validated_data.pop('customer_phone')
-        full_name = validated_data.get('customer_name', '')
+        full_name = validated_data.get('customer_name', '') or 'کاربر مهمان'
         
         request = self.context.get('request')
         
-        # --- ۱. مدیریت مشتری (Invisible Registration) ---
+        # ۱. مدیریت مشتری
         if request and request.user.is_authenticated:
-            # اگر لاگین است
             if hasattr(request.user, 'customer_profile'):
                 customer = request.user.customer_profile
             else:
@@ -75,29 +73,27 @@ class OrderSerializer(serializers.ModelSerializer):
                     user=request.user, phone_number=phone, full_name=full_name
                 )
         else:
-            # اگر مهمان است: پیدا کن یا بساز
             customer, created = Customer.objects.get_or_create(
                 phone_number=phone,
                 defaults={'full_name': full_name}
             )
-            if not created and not customer.full_name and full_name:
+            if not created and not customer.full_name:
                 customer.full_name = full_name
                 customer.save()
 
-        # --- ۲. تشخیص فروشگاه (رفع باگ IntegrityError) ---
+        # ۲. اعتبارسنجی اولیه سبد خرید
         if not items_data:
-            raise serializers.ValidationError("سبد خرید نمی‌تواند خالی باشد.")
+            raise serializers.ValidationError({"items_data": "سبد خرید نمی‌تواند خالی باشد."})
             
         first_variant_id = items_data[0].get('variant_id')
         try:
             first_variant = ProductVariant.objects.get(id=first_variant_id)
             shop = first_variant.product.shop
-        except ProductVariant.DoesNotExist:
-            raise serializers.ValidationError(f"محصول با شناسه {first_variant_id} وجود ندارد.")
+        except (ProductVariant.DoesNotExist, TypeError):
+            raise serializers.ValidationError("محصول انتخاب شده نامعتبر است.")
 
-        # --- ۳. ثبت سفارش (اتمیک) ---
+        # ۳. ثبت اتمیک سفارش
         with transaction.atomic():
-            # ایجاد سفارش با اتصال به فروشگاه و مشتری
             order = Order.objects.create(
                 shop=shop,
                 customer=customer, 
@@ -120,21 +116,18 @@ class OrderSerializer(serializers.ModelSerializer):
                 if variant.stock < quantity:
                     raise serializers.ValidationError(f"موجودی '{variant.product.name}' کافی نیست.")
                 
-                # ایجاد آیتم
                 OrderItem.objects.create(
                     order=order,
                     variant=variant,
                     quantity=quantity
                 )
                 
-                # کسر موجودی (اختیاری - اگر می‌خواهید انبار کم شود این خط را از کامنت درآورید)
-                variant.stock -= quantity
+                # کسر موجودی
+                from django.db.models import F
+                variant.stock = F('stock') - quantity
                 variant.save()
             
-            # محاسبه قیمت نهایی
             order.calculate_totals()
-            
-            # آپدیت آمار مشتری
             customer.update_stats(order.total_amount)
             
         return order

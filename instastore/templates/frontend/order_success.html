@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}سفارش موفق{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            
+            <div class="card shadow-lg border-0 rounded-4 p-5 animate__animated animate__fadeInUp">
+                <div class="mb-4">
+                    <i class="bi bi-check-circle-fill text-success" style="font-size: 5rem;"></i>
+                </div>
+                
+                <h2 class="fw-bold text-dark mb-3">سفارش شما با موفقیت ثبت شد!</h2>
+                <p class="text-muted fs-5">کد رهگیری: <span class="fw-bold text-dark user-select-all">{{ order.order_id }}</span></p>
+                
+                <div class="alert alert-light border my-4">
+                    <p class="mb-1 text-muted">مبلغ کل پرداخت شده:</p>
+                    <h4 class="text-success fw-bold">{{ order.total_amount|intcomma }} تومان</h4>
+                </div>
+
+                {% if not user.is_authenticated %}
+                <div class="bg-primary bg-opacity-10 p-4 rounded-4 mt-4 text-start border border-primary border-opacity-25">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="bi bi-person-plus-fill text-primary fs-3 me-2"></i>
+                        <h5 class="fw-bold text-primary mb-0">این سفارش را به نام خودتان ذخیره کنید!</h5>
+                    </div>
+                    <p class="text-muted small mb-3">
+                        شما به صورت <span class="fw-bold text-dark">مهمان</span> خرید کردید. 
+                        برای اینکه بتوانید وضعیت سفارش را لحظه‌به‌لحظه پیگیری کنید و سوابق خریدتان محفوظ بماند، 
+                        همین الان با شماره موبایل <strong>{{ order.customer_phone }}</strong> ثبت‌نام کنید.
+                        <br>
+                        <span class="text-success"><i class="bi bi-check-all"></i> سیستم به صورت خودکار این سفارش را به حساب شما متصل می‌کند.</span>
+                    </p>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'frontend:login' %}?next={% url 'frontend:order-tracking' %}" class="btn btn-primary btn-lg shadow-sm">
+                            ایجاد حساب کاربری و پیگیری سفارش
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="mt-4">
+                    <a href="{% url 'frontend:order-tracking' %}" class="btn btn-outline-primary px-4 py-2 rounded-pill">
+                        <i class="bi bi-truck me-2"></i> پیگیری سفارشات
+                    </a>
+                </div>
+                {% endif %}
+
+                <div class="mt-5 border-top pt-4">
+                    <a href="{% url 'frontend:shop-store' order.shop.slug %}" class="text-decoration-none text-muted hover-primary">
+                        <i class="bi bi-arrow-right me-1"></i> بازگشت به فروشگاه {{ order.shop.shop_name }}
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

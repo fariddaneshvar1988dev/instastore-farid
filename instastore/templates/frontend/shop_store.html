@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}{{ shop.shop_name }} | InstaStore{% endblock %}
 
@@ -12,7 +13,7 @@
                 {{ shop.bio|default:"خوش آمدید به فروشگاه اینترنتی ما" }}
             </p>
             
-            <div class="d-flex justify-content-center gap-3">
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
                 {% if shop.instagram_username %}
                 <a href="https://instagram.com/{{ shop.instagram_username }}" target="_blank" class="btn btn-outline-danger rounded-pill px-4">
                     <i class="bi bi-instagram me-2"></i> اینستاگرام
@@ -24,6 +25,10 @@
                     <i class="bi bi-telephone me-2"></i> تماس
                 </a>
                 {% endif %}
+
+                <a href="{% url 'frontend:order-tracking' %}" class="btn btn-outline-dark rounded-pill px-4">
+                    <i class="bi bi-truck me-2"></i> پیگیری سفارش
+                </a>
             </div>
         </div>
     </div>
@@ -64,7 +69,44 @@
         </div>
 
         <div class="col-lg-9">
-            {% include 'partials/product_list.html' %}
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+                {% for product in products %}
+                <div class="col">
+                    <div class="card h-100 shadow-sm border-0 rounded-4 product-card">
+                        <div class="position-relative overflow-hidden" style="height: 250px;">
+                            {% if product.images.exists %}
+                                <img src="{{ product.images.first.image.url }}" class="card-img-top h-100 w-100" style="object-fit: cover;" alt="{{ product.name }}">
+                            {% else %}
+                                <img src="{% static 'no-image.jpg' %}" class="card-img-top h-100 w-100 bg-light" style="object-fit: cover;" alt="تصویر موجود نیست">
+                            {% endif %}
+                            
+                            {% if product.variants.first.stock == 0 %}
+                                <span class="position-absolute top-0 start-0 m-3 badge bg-danger rounded-pill">ناموجود</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title fw-bold fs-6 mb-1">{{ product.name }}</h5>
+                            <small class="text-muted mb-3">{{ product.category.name|default:"عمومی" }}</small>
+                            
+                            <div class="mt-auto d-flex justify-content-between align-items-center">
+                                <span class="fw-bold text-primary fs-5">{{ product.base_price|intcomma }} <small class="fs-7">تومان</small></span>
+                                <a href="{% url 'frontend:product-detail' shop.slug product.id %}" class="btn btn-sm btn-outline-dark rounded-pill px-3">
+                                    مشاهده
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center py-5">
+                    <div class="text-muted">
+                        <i class="bi bi-box-seam display-1"></i>
+                        <p class="mt-3">محصولی یافت نشد.</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 </div>

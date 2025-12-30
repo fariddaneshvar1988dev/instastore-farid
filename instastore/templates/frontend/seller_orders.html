@@ -67,7 +67,7 @@
                             <th>مبلغ کل</th>
                             <th>وضعیت</th>
                             <th>تاریخ</th>
-                            <th>عملیات</th>
+                            <th class="text-end pe-4">عملیات</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -90,10 +90,15 @@
                                 </span>
                             </td>
                             <td>{{ order.created_at|date:"Y/m/d H:i" }}</td>
-                            <td>
-                                <a href="{% url 'seller-order-detail' order.id %}" class="btn btn-sm btn-primary">
-                                    مدیریت
-                                </a>
+                            <td class="text-end pe-4">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'frontend:seller-order-detail' order.id %}" class="btn btn-outline-primary" title="جزئیات">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <button class="btn btn-outline-danger" onclick="deleteOrder('{{ order.id }}')" title="حذف">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         {% empty %}
@@ -109,4 +114,28 @@
         </div>
     </div>
 </div>
+
+<script>
+    function deleteOrder(orderId) {
+        if (confirm('آیا از حذف این سفارش اطمینان دارید؟ این عملیات غیرقابل بازگشت است.')) {
+            fetch(`/seller/orders/${orderId}/delete/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('سفارش با موفقیت حذف شد.');
+                    location.reload();
+                } else {
+                    alert('خطا در حذف سفارش: ' + (data.error || 'مشکلی پیش آمد.'));
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    }
+</script>
 {% endblock %}

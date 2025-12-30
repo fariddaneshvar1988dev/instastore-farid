@@ -1,5 +1,5 @@
 import logging
-import json
+# import json  <-- نیازی نیست
 from django.conf import settings
 from django.db.models.functions import Coalesce
 from django.shortcuts import render, get_object_or_404, redirect
@@ -8,16 +8,15 @@ from django.http import JsonResponse, Http404
 from django.views.decorators.http import require_http_methods, require_POST
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.urls import reverse_lazy
-from django.core.files.storage import FileSystemStorage
 from django.db.models import Sum
 from django.contrib.auth import login, logout, authenticate
-from django.db import transaction
 from django.utils import timezone
 
 from shops.models import Shop
-from products.models import Product, Category, ProductVariant
+from products.models import Product, Category, ProductVariant, ProductImage
 from orders.models import Order, OrderItem
 from .forms import ProductForm, SellerRegisterForm, ShopSettingsForm
 from .cart import Cart
@@ -25,8 +24,35 @@ from .cart import Cart
 logger = logging.getLogger('instastore')
 
 # ==========================================================
-# 1. صفحات عمومی (Public Pages)
+# 1. صفحات عمومی و پیگیری سفارش
 # ==========================================================
+
+class OrderTrackingView(View):
+    template_name = 'frontend/track_order.html'
+
+    def get(self, request):
+        """نمایش صفحه پیگیری سفارش"""
+        return render(request, self.template_name)
+
+    def post(self, request):
+        """پردازش فرم جستجوی سفارش"""
+        order_id = request.POST.get('order_id', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        
+        if not order_id or not phone:
+            return render(request, self.template_name, {
+                'error': 'لطفا شماره سفارش و شماره موبایل را وارد کنید.'
+            })
+
+        try:
+            # جستجو دقیق
+            order = Order.objects.get(order_id__iexact=order_id, customer_phone=phone)
+            return render(request, self.template_name, {'order': order})
+            
+        except Order.DoesNotExist:
+            return render(request, self.template_name, {
+                'error': 'سفارشی با این مشخصات یافت نشد. لطفا اطلاعات را بررسی کنید.'
+            })
 
 class HomeView(TemplateView):
     template_name = 'frontend/home.html'
@@ -55,20 +81,18 @@ def contact_page(request):
 @method_decorator(login_required, name='dispatch')
 class ProfileView(TemplateView):
     template_name = 'frontend/profile.html'
-    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['shop'] = getattr(self.request.user, 'shop', None)
         return context
 
 # ==========================================================
-# 2. مدیریت سبد خرید (Cart Logic)
+# 2. مدیریت سبد خرید
 # ==========================================================
 
 @require_POST
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, id=product_id)
-    # ایجاد سبد خرید اختصاصی برای این فروشگاه
     cart = Cart(request, shop_id=product.shop.id)
     
     variant_id = request.POST.get('variant_id')
@@ -96,15 +120,15 @@ def add_to_cart(request, product_id):
 
 @require_POST
 def remove_from_cart(request, item_key):
-    # ۱. پیدا کردن واریانت برای تشخیص فروشگاه
-    variant = get_object_or_404(ProductVariant, id=item_key)
-    shop = variant.product.shop
+    try:
+        variant = ProductVariant.objects.get(id=item_key)
+        shop = variant.product.shop
+    except ProductVariant.DoesNotExist:
+        return JsonResponse({'error': 'محصول یافت نشد'}, status=404)
     
-    # ۲. حذف از سبد خرید اختصاصی همان فروشگاه
     cart = Cart(request, shop_id=shop.id)
     cart.remove(item_key)
     
-    # ۳. رندر کردن مجدد سایدبار برای HTMX
     return render(request, 'partials/cart_sidebar.html', {
         'cart': cart,
         'shop': shop,
@@ -119,37 +143,21 @@ def get_cart_component(request):
         if shop:
             shop_id = shop.id
             
-    # ایجاد شیء سبد خرید با توجه به فروشگاه فعلی
     cart = Cart(request, shop_id=shop_id)
     return render(request, 'partials/cart_badge.html', {'cart': cart})
 
 def get_cart_sidebar(request):
     shop_slug = request.GET.get('shop_slug')
-    shop = get_object_or_404(Shop, slug=shop_slug) # این خط مهم است
+    shop = get_object_or_404(Shop, slug=shop_slug)
     cart = Cart(request, shop_id=shop.id)
     return render(request, 'partials/cart_sidebar.html', {
         'cart': cart,
-        'shop': shop, # حتما ارسال شود
-        'shop_slug': shop_slug
+        'shop': shop,
+        'shop_slug': shop.slug
     })
-    
-    # پیدا کردن فروشگاه
-    if shop_slug:
-        shop = Shop.objects.filter(slug=shop_slug, is_active=True).first()
-    
-    # اگر فروشگاه پیدا شد، سبد مخصوص آن را لود کن، در غیر این صورت سبد پیش‌فرض
-    if shop:
-        cart = Cart(request, shop_id=shop.id)
-    else:
-        cart = Cart(request)
 
-    return render(request, 'partials/cart_sidebar.html', {
-        'cart': cart,
-        'shop_slug': shop_slug,
-        'shop': shop
-    })
 # ==========================================================
-# 3. فروشگاه و محصول (Storefront)
+# 3. فروشگاه و محصول
 # ==========================================================
 
 class ShopStoreView(TemplateView):
@@ -186,16 +194,25 @@ class ProductDetailView(TemplateView):
         context = super().get_context_data(**kwargs)
         context['shop'] = shop
         context['product'] = product
-        context['variants'] = product.variants.filter(stock__gt=0)
+        
+        variants = product.variants.filter(stock__gt=0)
+        context['variants'] = variants
+        
+        unique_colors = set(v.color for v in variants if v.color)
+        unique_sizes = set(v.size for v in variants if v.size)
+        context['unique_colors'] = sorted(list(unique_colors))
+        context['unique_sizes'] = sorted(list(unique_sizes))
         
         variants_data = [{
             'id': v.id, 'color': v.color, 'size': v.size, 
             'stock': v.stock, 'price_adj': float(v.price_adjustment)
-        } for v in context['variants']]
-        context['variants_json'] = json.dumps(variants_data)
+        } for v in variants]
+        
+        context['variants_json'] = variants_data
         return context
 
 class CheckoutView(View):
+    """نمایش صفحه تسویه حساب"""
     def get(self, request, shop_slug):
         shop = get_object_or_404(Shop, slug=shop_slug, is_active=True)
         cart = Cart(request, shop_id=shop.id)
@@ -204,67 +221,31 @@ class CheckoutView(View):
             messages.warning(request, "سبد خرید شما خالی است.")
             return redirect('frontend:shop-store', shop_slug=shop.slug)
 
-        # چک کردن موجودی انبار قبل از نمایش فرم آدرس
+        cart_items_data = []
         for item in cart:
             variant = item['variant']
             if variant.stock < item['quantity'] or not variant.product.is_active:
                 messages.error(request, f"موجودی کالا یا وضعیت '{variant.product.name}' تغییر کرده است.")
                 return redirect('frontend:shop-store', shop_slug=shop.slug)
             
-        return render(request, 'frontend/checkout.html', {'shop': shop, 'cart': cart})
+            cart_items_data.append({
+                "variant_id": variant.id,
+                "quantity": item['quantity']
+            })
+            
+        return render(request, 'frontend/checkout.html', {
+            'shop': shop, 
+            'cart': cart,
+            'cart_items_json': cart_items_data  
+        })
 
-    def post(self, request, shop_slug):
-        shop = get_object_or_404(Shop, slug=shop_slug, is_active=True)
-        cart = Cart(request, shop_id=shop.id)
-        
-        if cart.get_total_items() == 0:
-            messages.warning(request, "سبد خرید خالی است.")
-            return redirect('frontend:shop-store', shop_slug=shop.slug)
-
-        customer_phone = request.POST.get('customer_phone', '')
-        if not customer_phone.startswith('09') or len(customer_phone) != 11:
-            messages.error(request, "لطفاً یک شماره موبایل معتبر (مثل 09123456789) وارد کنید.")
-            return render(request, 'frontend/checkout.html', {'shop': shop, 'cart': cart})
-
-        try:
-            with transaction.atomic():
-                order = Order.objects.create(
-                    shop=shop,
-                    customer_name=request.POST.get('customer_name'),
-                    customer_phone=customer_phone,
-                    shipping_address=request.POST.get('address'),
-                    customer_notes=request.POST.get('note'),
-                    subtotal=cart.get_total_price(),
-                    total_amount=cart.get_total_price()
-                )
-
-                for item in cart:
-                    variant = ProductVariant.objects.select_for_update().get(id=item['variant'].id)
-                    if variant.stock < item['quantity']:
-                        raise Exception(f"موجودی کالای '{variant.product.name}' در این لحظه به پایان رسید.")
-                    
-                    variant.stock -= item['quantity']
-                    variant.save()
-                    
-                    OrderItem.objects.create(
-                        order=order, variant=variant, product_name=variant.product.name,
-                        quantity=item['quantity'], unit_price=item['price'], total_price=item['total_price']
-                    )
-
-                cart.clear()
-                messages.success(request, f"سفارش شماره #{order.order_id} با موفقیت ثبت شد.")
-                return redirect('frontend:shop-store', shop_slug=shop.slug)
-
-        except Exception as e:
-            logger.error(f"Checkout Error: {e}")
-            messages.error(request, str(e))
-            return redirect('frontend:checkout', shop_slug=shop.slug)
-
-class OrderTrackingView(TemplateView):
-    template_name = 'frontend/track_order.html'
+def order_success_view(request, order_id):
+    """صفحه موفقیت سفارش برای مهمان و عضو"""
+    order = get_object_or_404(Order, order_id=order_id)
+    return render(request, 'frontend/order_success.html', {'order': order})
 
 # ==========================================================
-# 4. پنل فروشنده (Seller Dashboard)
+# 4. پنل فروشنده
 # ==========================================================
 
 class SellerRegisterView(CreateView):
@@ -352,8 +333,7 @@ class SellerProductsView(TemplateView):
         })
         return context
 
-@method_decorator(login_required, name='dispatch')
-class SellerProductCreateView(CreateView):
+class SellerProductCreateView(LoginRequiredMixin, CreateView):
     model = Product
     form_class = ProductForm
     template_name = 'frontend/seller_product_form.html'
@@ -367,31 +347,42 @@ class SellerProductCreateView(CreateView):
     def form_valid(self, form):
         product = form.save(commit=False)
         product.shop = self.request.user.shop
-        
-        fs = FileSystemStorage()
-        if self.request.FILES.get('image1'):
-            filename = fs.save(f"products/{self.request.FILES['image1'].name}", self.request.FILES['image1'])
-            product.images = [fs.url(filename)]
-            
         product.save()
+        
+        for field_name in ['image1', 'image2', 'image3']:
+            image_file = self.request.FILES.get(field_name)
+            if image_file:
+                ProductImage.objects.create(
+                    product=product,
+                    image=image_file,
+                    alt_text=product.name
+                )
         
         colors = self.request.POST.getlist('vars_color[]')
         sizes = self.request.POST.getlist('vars_size[]')
         stocks = self.request.POST.getlist('vars_stock[]')
         prices = self.request.POST.getlist('vars_price[]')
         
+        has_variant = False
         if colors:
             for c, s, st, p in zip(colors, sizes, stocks, prices):
-                ProductVariant.objects.create(
-                    product=product, color=c, size=s, 
-                    stock=int(st), price_adjustment=int(p) if p else 0
-                )
+                if st:
+                    ProductVariant.objects.create(
+                        product=product, 
+                        color=c, 
+                        size=s, 
+                        stock=int(st), 
+                        price_adjustment=int(p) if p else 0
+                    )
+                    has_variant = True
+        
+        if not has_variant:
+            ProductVariant.objects.create(product=product, stock=10, price_adjustment=0)
         
         messages.success(self.request, "محصول با موفقیت ایجاد شد.")
         return redirect(self.success_url)
 
-@method_decorator(login_required, name='dispatch')
-class SellerProductUpdateView(UpdateView):
+class SellerProductUpdateView(LoginRequiredMixin, UpdateView):
     model = Product
     form_class = ProductForm
     template_name = 'frontend/seller_product_form.html'
@@ -405,23 +396,66 @@ class SellerProductUpdateView(UpdateView):
         kwargs['shop'] = self.request.user.shop
         return kwargs
 
+    def form_valid(self, form):
+        self.object = form.save()
+
+        for field_name in ['image1', 'image2', 'image3']:
+            image_file = self.request.FILES.get(field_name)
+            if image_file:
+                ProductImage.objects.create(
+                    product=self.object,
+                    image=image_file,
+                    alt_text=self.object.name
+                )
+        
+        messages.success(self.request, "محصول ویرایش شد.")
+        return redirect(self.success_url)
+
 @require_http_methods(["POST", "DELETE"])
 @login_required
 def delete_product(request, pk):
     shop = request.user.shop
     product = get_object_or_404(Product, pk=pk, shop=shop)
-    product.delete()
-    return JsonResponse({'success': True})
+    product.is_active = False 
+    product.save()
+    return JsonResponse({'success': True, 'message': 'محصول بایگانی شد.'})
 
 @method_decorator(login_required, name='dispatch')
 class SellerOrdersView(TemplateView):
     template_name = 'frontend/seller_orders.html'
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         shop = self.request.user.shop
-        context['orders'] = Order.objects.filter(shop=shop).order_by('-created_at')
+        
+        status_filter = self.request.GET.get('status', 'all')
+        orders = Order.objects.filter(shop=shop).order_by('-created_at')
+        
+        if status_filter != 'all':
+            orders = orders.filter(status=status_filter)
+            
+        context['orders'] = orders
         context['shop'] = shop
+        context['status_filter'] = status_filter
+        
+        context['order_stats'] = {
+            'pending': Order.objects.filter(shop=shop, status='pending').count(),
+            'confirmed': Order.objects.filter(shop=shop, status='confirmed').count(),
+            'shipped': Order.objects.filter(shop=shop, status='shipped').count(),
+            'delivered': Order.objects.filter(shop=shop, status='delivered').count(),
+        }
         return context
+
+@require_http_methods(["POST", "DELETE"])
+@login_required
+def delete_order(request, pk):
+    shop = request.user.shop
+    order = get_object_or_404(Order, pk=pk, shop=shop)
+    try:
+        order.delete()
+        return JsonResponse({'success': True, 'message': 'سفارش با موفقیت حذف شد.'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 @method_decorator(login_required, name='dispatch')
 class SellerOrderDetailView(DetailView):
@@ -437,10 +471,8 @@ class ShopSettingsView(UpdateView):
     form_class = ShopSettingsForm
     template_name = 'frontend/seller_settings.html'
     success_url = reverse_lazy('frontend:seller-settings')
-    
     def get_object(self):
         return self.request.user.shop
-    
     def form_valid(self, form):
         messages.success(self.request, "تنظیمات با موفقیت ذخیره شد.")
         return super().form_valid(form)

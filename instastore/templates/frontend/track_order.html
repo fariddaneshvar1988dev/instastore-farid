@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}پیگیری سفارش | {{ shop.shop_name|default:"فروشگاه" }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            
+            <div class="text-center mb-5">
+                <h1 class="fw-bold mb-3"><i class="bi bi-search text-primary"></i> پیگیری سفارش</h1>
+                <p class="text-muted">برای مشاهده وضعیت سفارش، شماره سفارش و شماره موبایل خود را وارد کنید.</p>
+            </div>
+
+            <div class="card shadow-sm border-0 rounded-4 p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% if error %}
+                    <div class="alert alert-danger rounded-3 mb-4">
+                        <i class="bi bi-exclamation-circle me-2"></i> {{ error }}
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="order_id" class="form-label text-muted small fw-bold">شماره سفارش</label>
+                        <input type="text" class="form-control form-control-lg bg-light border-0" 
+                               id="order_id" name="order_id" placeholder="مثال: ORD2512123456" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="phone" class="form-label text-muted small fw-bold">شماره موبایل</label>
+                        <input type="tel" class="form-control form-control-lg bg-light border-0" 
+                               id="phone" name="phone" placeholder="09123456789" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 btn-lg rounded-3 fw-bold">
+                        جستجو و پیگیری
+                    </button>
+                </form>
+            </div>
+
+            {% if order %}
+            <div class="card shadow border-0 rounded-4 mt-5 animate__animated animate__fadeInUp">
+                <div class="card-header bg-success text-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold">سفارش پیدا شد!</h5>
+                        <span class="badge bg-white text-success">{{ order.get_status_display_fa }}</span>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <small class="text-muted d-block">شماره سفارش:</small>
+                            <span class="fw-bold">{{ order.order_id }}</span>
+                        </div>
+                        <div class="col-6 text-end">
+                            <small class="text-muted d-block">تاریخ ثبت:</small>
+                            <span>{{ order.created_at|date:"Y/m/d" }}</span>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6 class="fw-bold mb-3 text-secondary">اقلام سفارش:</h6>
+                    <ul class="list-group list-group-flush mb-3">
+                        {% for item in order.items.all %}
+                        <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="fw-bold">{{ item.variant.product.name }}</span>
+                                <div class="small text-muted">
+                                    {{ item.quantity }} عدد 
+                                    {% if item.variant.color %}| {{ item.variant.color }}{% endif %}
+                                </div>
+                            </div>
+                            <span>{{ item.total_price|intcomma }} تومان</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    
+                    <div class="alert alert-light border d-flex justify-content-between align-items-center m-0">
+                        <span class="text-muted">مبلغ کل:</span>
+                        <span class="fw-bold text-success fs-5">{{ order.total_amount|intcomma }} تومان</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}
