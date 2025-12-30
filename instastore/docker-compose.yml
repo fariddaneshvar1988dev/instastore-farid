@@ -8,42 +8,37 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=instastore_db
-      - POSTGRES_USER=instastore_user
-      - POSTGRES_PASSWORD=secure_password_123
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432" # برای امنیت بیشتر، فقط به روی خود سرور باز باشد
 
   # سرویس وب (Django)
   web:
     build: .
     command: gunicorn instastore.wsgi:application --bind 0.0.0.0:8000
     volumes:
-      - .:/app  # برای اینکه تغییرات کد رو آنی ببینی
+      - .:/app
     ports:
       - "8000:8000"
     environment:
-      - DEBUG=True
-      - SECRET_KEY=django-insecure-test-key
-      - ALLOWED_HOSTS=localhost,127.0.0.1
-      # تنظیمات اتصال به دیتابیس بالا
+      - DEBUG=${DEBUG}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
       - DB_ENGINE=django.db.backends.postgresql
-      - DB_NAME=instastore_db
-      - DB_USER=instastore_user
-      - DB_PASSWORD=secure_password_123
-      - DB_HOST=db
-      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
     depends_on:
       - db
 
 volumes:
   postgres_data:
 
-
-
-# سرویس مانیتورینگ (Prometheus)
-
-
+# سرویس مانیتورینگ
   prometheus:
     image: prom/prometheus:latest
     volumes:
@@ -58,6 +53,6 @@ volumes:
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin  # رمز ورود به گرافانا
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD}
     depends_on:
       - prometheus
