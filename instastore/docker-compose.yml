@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # سرویس دیتابیس (PostgreSQL)
+  db:
+    image: postgres:15
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=instastore_db
+      - POSTGRES_USER=instastore_user
+      - POSTGRES_PASSWORD=secure_password_123
+    ports:
+      - "5432:5432"
+
+  # سرویس وب (Django)
+  web:
+    build: .
+    command: gunicorn instastore.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - .:/app  # برای اینکه تغییرات کد رو آنی ببینی
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-test-key
+      - ALLOWED_HOSTS=localhost,127.0.0.1
+      # تنظیمات اتصال به دیتابیس بالا
+      - DB_ENGINE=django.db.backends.postgresql
+      - DB_NAME=instastore_db
+      - DB_USER=instastore_user
+      - DB_PASSWORD=secure_password_123
+      - DB_HOST=db
+      - DB_PORT=5432
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
