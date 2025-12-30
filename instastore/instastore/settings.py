@@ -52,9 +52,11 @@ INSTALLED_APPS = [
     'orders',
     'products',
     'frontend',
+    'django_prometheus',#monitoring
 ]
 
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # اگر نصب کرده‌اید
     # 'corsheaders.middleware.CorsMiddleware',  # اگر نیاز به CORS دارید
@@ -65,6 +67,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'shops.middleware.ShopMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
 ROOT_URLCONF = 'instastore.urls'
