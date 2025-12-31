@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # سرویس دیتابیس (PostgreSQL)
   db:
     image: postgres:15
     restart: always
@@ -14,7 +13,6 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
 
-  # سرویس وب (Django)
   web:
     build: .
     command: gunicorn instastore.wsgi:application --bind 0.0.0.0:8000
@@ -35,7 +33,6 @@ services:
     depends_on:
       - db
 
-  # سرویس مانیتورینگ (حالا زیر مجموعه services است)
   prometheus:
     image: prom/prometheus:latest
     volumes:
