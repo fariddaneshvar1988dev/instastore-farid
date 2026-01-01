@@ -2,7 +2,12 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # این تیکه جدید رو هم اضافه کن برای جانگو (که قراره الان بسازیم) 👇
   - job_name: 'django'
-    metrics_path: '/prometheus/metrics'
+    scrape_interval: 15s
     static_configs:
       - targets: ['web:8000']
