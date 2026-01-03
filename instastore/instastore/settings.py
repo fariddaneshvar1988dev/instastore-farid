@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'products',
     'frontend',
     'django_prometheus',#monitoring
+    
 ]
 
 MIDDLEWARE = [

@@ -1,0 +1,7 @@
+instastore/.env*
+instastore/nginx_data/
+instastore/nginx_letsencrypt/
+*.sqlite3
+*.sqlite
+__pycache__/
+*.pyc
