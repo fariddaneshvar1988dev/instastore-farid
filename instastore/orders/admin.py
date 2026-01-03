@@ -1,47 +1,39 @@
 from django.contrib import admin
-from .models import Order, OrderItem, CustomerCart
+from .models import Order, OrderItem
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
-    # فیلد product_price وجود ندارد، به جای آن از unit_price استفاده می‌کنیم
-    readonly_fields = ('product_name', 'unit_price', 'total_price', 'variant', 'size', 'color')
+    # فیلدها باید دقیقاً با models.py یکی باشند
+    readonly_fields = ('product', 'variant', 'price', 'quantity')
     can_delete = False
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('order_id', 'shop', 'customer_phone', 'status', 'total_amount', 'created_at')
+    # اصلاح نام فیلدها بر اساس فایل models.py شما
+    list_display = ('id', 'shop', 'phone_number', 'status', 'total_price', 'created_at')
     list_filter = ('status', 'created_at', 'shop')
-    search_fields = ('order_id', 'customer_phone', 'customer_name')
+    search_fields = ('id', 'phone_number', 'full_name', 'address')
     
-    # فیلد delivered_at از مدل حذف شده بود، پس از اینجا هم حذفش می‌کنیم
     readonly_fields = ('created_at', 'updated_at')
     
     inlines = [OrderItemInline]
     
     fieldsets = (
         ('اطلاعات سفارش', {
-            'fields': ('order_id', 'shop', 'customer', 'status', 'created_at')
+            'fields': ('shop', 'user', 'status', 'created_at', 'updated_at')
         }),
         ('اطلاعات مالی', {
-            'fields': ('subtotal', 'shipping_cost', 'discount', 'total_amount', 'payment_method', 'payment_status')
+            'fields': ('total_price', 'is_paid')
         }),
         ('اطلاعات ارسال', {
-            'fields': ('customer_name', 'customer_phone', 'shipping_address', 'tracking_code')
+            'fields': ('full_name', 'phone_number', 'postal_code', 'address')
         }),
-        ('یادداشت‌ها', {
-            'fields': ('customer_notes', 'admin_notes')
-        })
     )
 
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
-    # اصلاح نام فیلدها طبق مدل جدید
-    list_display = ('order', 'product_name', 'quantity', 'unit_price', 'total_price')
+    list_display = ('order', 'product', 'quantity', 'price')
     list_filter = ('order__shop',)
-    search_fields = ('order__order_id', 'product_name')
-    readonly_fields = ('unit_price', 'total_price')
-
-@admin.register(CustomerCart)
-class CustomerCartAdmin(admin.ModelAdmin):
-    list_display = ('customer', 'updated_at')
+    search_fields = ('order__id', 'product__name')
+    readonly_fields = ('price',)
