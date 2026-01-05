@@ -5,3 +5,10 @@ instastore/nginx_letsencrypt/
 *.sqlite
 __pycache__/
 *.pyc
+.env
+# Node.js
+node_modules/
+npm-debug.log
+
+# Tailwind output (Optional - if you build on server)
+# static/css/styles.css
