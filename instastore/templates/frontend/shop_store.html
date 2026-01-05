@@ -1,113 +1,139 @@
 {% extends 'base.html' %}
-{% load static %}
-{% load humanize %}
+{% load static humanize %}
 
-{% block title %}{{ shop.shop_name }} | InstaStore{% endblock %}
+{% block title %}{{ shop.shop_name }} | InstaVitrin{% endblock %}
 
 {% block content %}
-<div class="shop-header text-center mb-5 py-5 bg-light border-bottom">
-    <div class="container">
-        <div class="animate__animated animate__fadeInDown">
-            <h1 class="display-5 fw-bold mb-3 text-dark">{{ shop.shop_name }}</h1>
-            <p class="lead text-muted mb-4 mx-auto" style="max-width: 600px;">
-                {{ shop.bio|default:"خوش آمدید به فروشگاه اینترنتی ما" }}
-            </p>
+
+<div class="bg-white border-b border-gray-200 pb-6 mb-6 -mt-4 md:mt-0 pt-20 md:pt-8 md:rounded-2xl md:border md:shadow-sm">
+    <div class="max-w-4xl mx-auto px-4">
+        
+        <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
             
-            <div class="d-flex justify-content-center gap-3 flex-wrap">
-                {% if shop.instagram_username %}
-                <a href="https://instagram.com/{{ shop.instagram_username }}" target="_blank" class="btn btn-outline-danger rounded-pill px-4">
-                    <i class="bi bi-instagram me-2"></i> اینستاگرام
-                </a>
-                {% endif %}
-                
-                {% if shop.phone_number %}
-                <a href="tel:{{ shop.phone_number }}" class="btn btn-outline-primary rounded-pill px-4">
-                    <i class="bi bi-telephone me-2"></i> تماس
-                </a>
-                {% endif %}
-
-                <a href="{% url 'frontend:order-tracking' %}" class="btn btn-outline-dark rounded-pill px-4">
-                    <i class="bi bi-truck me-2"></i> پیگیری سفارش
-                </a>
+            <div class="relative group">
+                <div class="p-1 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500">
+                    <div class="bg-white p-1 rounded-full">
+                        {% if shop.logo %}
+                        <img src="{{ shop.logo.url }}" alt="{{ shop.shop_name }}" class="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover">
+                        {% else %}
+                        <div class="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gray-100 flex items-center justify-center text-3xl font-bold text-gray-400">
+                            {{ shop.shop_name|slice:":1" }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-</div>
 
-<div class="container pb-5">
-    <div class="row">
-        <div class="col-lg-3 mb-4">
-            <div class="card shadow-sm border-0 rounded-4 sticky-top" style="top: 90px; z-index: 1;">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3"><i class="bi bi-funnel"></i> فیلترها</h5>
+            <div class="flex-1 text-center md:text-right">
+                <div class="flex flex-col md:flex-row items-center gap-4 mb-4">
+                    <h1 class="text-2xl font-black text-gray-900">{{ shop.shop_name }}</h1>
                     
-                    <form action="." method="get" class="mb-4">
-                        <div class="input-group">
-                            <input type="text" name="q" class="form-control bg-light border-0" 
-                                   placeholder="جستجو..." value="{{ request.GET.q|default:'' }}">
-                            <button class="btn btn-primary" type="submit">
-                                <i class="bi bi-search"></i>
-                            </button>
-                        </div>
-                    </form>
-
-                    <h6 class="fw-bold mb-2 text-muted small">دسته‌بندی‌ها</h6>
-                    <div class="list-group list-group-flush">
-                        <a href="{% url 'frontend:shop-store' shop_slug=shop.slug %}" 
-                           class="list-group-item list-group-item-action border-0 rounded-3 mb-1 {% if not request.GET.category %}bg-primary bg-opacity-10 text-primary fw-bold{% endif %}">
-                           <i class="bi bi-grid-fill me-2"></i> همه محصولات
+                    <div class="flex flex-wrap justify-center md:justify-start gap-2">
+                        {% if shop.instagram_username %}
+                        <a href="https://instagram.com/{{ shop.instagram_username }}" target="_blank" class="flex items-center gap-1 bg-pink-50 text-pink-600 px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-pink-100 transition">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.069-4.85.069-3.204 0-3.584-.012-4.849-.069-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069z"/></svg>
+                            اینستاگرام
                         </a>
-                        {% for cat in categories %}
-                        <a href="?category={{ cat.slug }}" 
-                           class="list-group-item list-group-item-action border-0 rounded-3 mb-1 {% if request.GET.category == cat.slug %}bg-primary bg-opacity-10 text-primary fw-bold{% endif %}">
-                            <i class="bi bi-tag me-2"></i> {{ cat.name }}
+                        {% endif %}
+
+                        {% if shop.phone_number %}
+                        <a href="tel:{{ shop.phone_number }}" class="flex items-center gap-1 bg-blue-50 text-blue-600 px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-blue-100 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                            تماس
                         </a>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
+                        {% endif %}
 
-        <div class="col-lg-9">
-            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
-                {% for product in products %}
-                <div class="col">
-                    <div class="card h-100 shadow-sm border-0 rounded-4 product-card">
-                        <div class="position-relative overflow-hidden" style="height: 250px;">
-                            {% if product.images.exists %}
-                                <img src="{{ product.images.first.image.url }}" class="card-img-top h-100 w-100" style="object-fit: cover;" alt="{{ product.name }}">
-                            {% else %}
-                                <img src="{% static 'no-image.jpg' %}" class="card-img-top h-100 w-100 bg-light" style="object-fit: cover;" alt="تصویر موجود نیست">
-                            {% endif %}
-                            
-                            {% if product.variants.first.stock == 0 %}
-                                <span class="position-absolute top-0 start-0 m-3 badge bg-danger rounded-pill">ناموجود</span>
-                            {% endif %}
-                        </div>
+                        <a href="{% url 'frontend:order-tracking' %}" class="flex items-center gap-1 bg-gray-100 text-gray-700 px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-gray-200 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                            پیگیری سفارش
+                        </a>
+                    </div>
+                </div>
 
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title fw-bold fs-6 mb-1">{{ product.name }}</h5>
-                            <small class="text-muted mb-3">{{ product.category.name|default:"عمومی" }}</small>
-                            
-                            <div class="mt-auto d-flex justify-content-between align-items-center">
-                                <span class="fw-bold text-primary fs-5">{{ product.base_price|intcomma }} <small class="fs-7">تومان</small></span>
-                                <a href="{% url 'frontend:product-detail' shop.slug product.id %}" class="btn btn-sm btn-outline-dark rounded-pill px-3">
-                                    مشاهده
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% empty %}
-                <div class="col-12 text-center py-5">
-                    <div class="text-muted">
-                        <i class="bi bi-box-seam display-1"></i>
-                        <p class="mt-3">محصولی یافت نشد.</p>
-                    </div>
-                </div>
-                {% endfor %}
+                <p class="text-gray-600 text-sm leading-relaxed max-w-lg mx-auto md:mx-0">
+                    {{ shop.bio|default:"خوش آمدید به فروشگاه اینترنتی ما." }}
+                </p>
             </div>
         </div>
     </div>
 </div>
+
+<div class="sticky top-0 md:top-4 z-20 bg-gray-50/95 backdrop-blur-sm pb-2 px-2 space-y-3">
+    
+    <form action="." method="get" class="relative max-w-md mx-auto">
+        <input type="text" name="q" value="{{ request.GET.q|default:'' }}" 
+               placeholder="جستجو در {{ shop.shop_name }}..." 
+               class="w-full bg-white border border-gray-200 rounded-xl px-10 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm transition">
+        
+        <button type="submit" class="absolute right-3 top-3.5 text-gray-400 hover:text-indigo-600">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </button>
+    </form>
+
+    <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar px-1">
+        <a href="{% url 'frontend:shop-store' shop_slug=shop.slug %}" 
+           class="flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition border
+                  {% if not request.GET.category %}bg-indigo-600 text-white border-indigo-600{% else %}bg-white text-gray-600 border-gray-200 hover:border-indigo-300{% endif %}">
+           همه
+        </a>
+
+        {% for cat in categories %}
+        <a href="?category={{ cat.slug }}" 
+           class="flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition border
+                  {% if request.GET.category == cat.slug %}bg-indigo-600 text-white border-indigo-600{% else %}bg-white text-gray-600 border-gray-200 hover:border-indigo-300{% endif %}">
+           {{ cat.name }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 pb-20 mt-4">
+    
+    {% for product in products %}
+    <article class="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col overflow-hidden relative">
+        
+        <div class="relative aspect-square overflow-hidden bg-gray-100">
+            {% if product.images.exists %}
+            <img src="{{ product.images.first.image.url }}" alt="{{ product.name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+            {% else %}
+            <div class="w-full h-full flex items-center justify-center text-gray-300 bg-gray-50">
+                <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            </div>
+            {% endif %}
+
+            {% if product.variants.first.stock == 0 %}
+            <div class="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center">
+                <span class="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md rotate-[-10deg]">ناموجود</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="p-3 flex flex-col flex-1">
+            <span class="text-[10px] text-gray-400 mb-1">{{ product.category.name|default:"عمومی" }}</span>
+            <h3 class="text-sm font-bold text-gray-800 line-clamp-1 mb-2 group-hover:text-indigo-600 transition">{{ product.name }}</h3>
+            
+            <div class="mt-auto flex items-center justify-between pt-2 border-t border-gray-50">
+                <div class="flex flex-col">
+                    <span class="text-sm font-black text-gray-900">{{ product.base_price|intcomma }}</span>
+                    <span class="text-[10px] text-gray-400">تومان</span>
+                </div>
+                
+                <a href="{% url 'frontend:product-detail' shop.slug product.id %}" class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                </a>
+            </div>
+        </div>
+    </article>
+    
+    {% empty %}
+    <div class="col-span-full py-16 flex flex-col items-center justify-center text-center opacity-60">
+        <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+        </div>
+        <h3 class="text-lg font-bold text-gray-800">محصولی یافت نشد</h3>
+        <p class="text-sm text-gray-500 mt-2">با فیلترهای دیگر جستجو کنید.</p>
+    </div>
+    {% endfor %}
+</div>
+
 {% endblock %}
