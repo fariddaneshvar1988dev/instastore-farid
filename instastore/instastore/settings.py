@@ -44,6 +44,10 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'drf_yasg',
+    'tailwind', # برای مدیریت تلویند
+    'theme',    # نام اپلیکیشنی که استایل‌های ما در آن قرار می‌گیرد (هنوز نساختیم)
+    'django_browser_reload', # رفرش خودکار
+    'django_htmx', # ابزارهای کمکی htmx
     # 'corsheaders',  # فعلاً غیرفعال کنید
     
     # Local apps
@@ -62,6 +66,10 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',  # اگر نصب کرده‌اید
     # 'corsheaders.middleware.CorsMiddleware',  # اگر نیاز به CORS دارید
     'django.contrib.sessions.middleware.SessionMiddleware',
+
+    "django_htmx.middleware.HtmxMiddleware",
+    "django_browser_reload.middleware.BrowserReloadMiddleware",
+    
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -240,3 +248,15 @@ REST_FRAMEWORK = {
 
 # Zarinpal payment gateway
 ZARINPAL_MERCHANT_ID = os.environ.get('ZARINPAL_MERCHANT_ID', 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx')
+# --- Tailwind Configuration ---
+# نام اپلیکیشنی که فایل‌های تلویند در آن ساخته می‌شود
+TAILWIND_APP_NAME = 'theme'
+
+# تنظیمات برای اینکه جنگو بداند NPM (مدیر پکیج نود) کجاست
+# در ویندوز معمولاً نیاز به تنظیم خاصی نیست، اما اگر خطا داد باید مسیرش را بدهیم
+NPM_BIN_PATH = r"C:/Program Files/nodejs/npm.cmd"
+# --- Browser Reload Config ---
+# این تنظیم برای این است که ابزار رفرش خودکار فقط در حالت دیباگ کار کند
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
