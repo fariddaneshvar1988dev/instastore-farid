@@ -1,224 +1,194 @@
+{% load static tailwind_tags %}
 <!DOCTYPE html>
-{% load static %}
-<html lang="fa" dir="rtl">
-
+<html lang="fa" dir="rtl" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}InstaStore - فروشگاه‌ساز اینستاگرامی{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}InstaStore | فروشگاه مدرن{% endblock %}</title>
 
-    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    {% tailwind_css %}
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <script src="{% static 'js/htmx.min.js' %}"></script>
 
     <style>
-        :root {
-            --primary: #6366f1;
-            --secondary: #8b5cf6;
-            --success: #10b981;
-            --dark: #1f2937;
-            --light: #f9fafb;
-        }
-
-        * { font-family: 'Vazirmatn', sans-serif; }
-
-        body {
-            background-color: var(--light);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .navbar {
-            background-color: white !important;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            padding: 0.8rem 0;
-        }
-
-        .navbar-brand {
-            font-weight: 800;
-            color: var(--primary) !important;
-            font-size: 1.5rem;
-            letter-spacing: -0.5px;
-        }
-
-        .nav-link {
-            color: #4b5563 !important;
-            font-weight: 500;
-            margin: 0 8px;
-            transition: all 0.2s;
-        }
-
-        .nav-link:hover, .nav-link.active {
-            color: var(--primary) !important;
-            transform: translateY(-1px);
-        }
-
-        .btn-auth {
-            border-radius: 50px;
-            padding: 8px 25px;
-            font-weight: 600;
-        }
-
-        .dropdown-menu {
-            border: none;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-        }
-
-        .badge-cart {
-            font-size: 0.65rem;
-            padding: 0.35em 0.6em;
-        }
-
-        footer {
-            margin-top: auto;
-            background-color: white;
-            border-top: 1px solid #e5e7eb;
-        }
+        /* تنظیمات میکروسکوپی تایپوگرافی */
+        body { font-family: 'Vazirmatn', sans-serif; }
+        
+        /* حذف اسکرول‌بار مزاحم در سایدبار ولی حفظ قابلیت اسکرول */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* انیمیشن برای لود شدن صفحات */
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
-    {% block extra_css %}{% endblock %}
 </head>
 
-<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+<body class="bg-gray-50 text-slate-800 antialiased h-screen overflow-hidden flex selection:bg-indigo-500 selection:text-white" 
+      hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 
-    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
-        <div class="container">
-            {% if shop.slug and '/shop/' in request.path %}
-            <a class="navbar-brand d-flex align-items-center" href="{% url 'frontend:shop-store' shop.slug %}">
-                <i class="bi bi-shop me-2 text-primary"></i>
-                <span class="animate__animated animate__fadeIn">{{ shop.shop_name }}</span>
+    <aside class="hidden md:flex flex-col w-72 bg-white border-l border-gray-200 h-full shadow-sm z-30">
+        <div class="h-16 flex items-center px-6 border-b border-gray-100">
+             <a href="{% url 'frontend:home' %}" class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">I</div>
+                <span class="text-xl font-extrabold text-indigo-900 tracking-tight">InstaStore</span>
             </a>
-            {% else %}
-            <a class="navbar-brand d-flex align-items-center" href="{% url 'frontend:home' %}">
-                <i class="bi bi-bag-heart-fill me-2 text-primary"></i>
-                InstaStore
+        </div>
+
+        <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-1">
+            
+            <p class="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">عمومی</p>
+            
+            <a href="{% url 'frontend:home' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group {% if request.path == '/' %}bg-indigo-50 text-indigo-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %}">
+                <svg class="w-5 h-5 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                <span class="font-medium">ویترین اصلی</span>
             </a>
+
+            {% if shop.slug %}
+            <div class="mt-6 mb-2">
+                <div class="bg-gradient-to-br from-indigo-600 to-violet-600 rounded-2xl p-4 text-white shadow-lg shadow-indigo-200">
+                    <p class="text-xs opacity-80 mb-1">فروشگاه جاری:</p>
+                    <h3 class="font-bold text-lg truncate">{{ shop.shop_name }}</h3>
+                    <a href="{% url 'frontend:shop-store' shop.slug %}" class="mt-3 block text-center text-xs bg-white/20 hover:bg-white/30 py-2 rounded-lg transition backdrop-blur-sm">
+                        مشاهده صفحه اول
+                    </a>
+                </div>
+            </div>
             {% endif %}
 
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            {% if request.user.is_authenticated %}
+            <p class="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-8 mb-2">پنل فروشنده</p>
+            <a href="{% url 'frontend:seller-dashboard' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <span class="font-medium">داشبورد مدیریت</span>
+            </a>
+            {% endif %}
+        </nav>
 
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto align-items-center">
-                    {% if request.user.is_authenticated %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle text-primary fw-bold" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-grid-1x2-fill me-1"></i> پنل مدیریت
-                        </a>
-                        <ul class="dropdown-menu animate__animated animate__fadeIn">
-                            <li><a class="dropdown-item" href="{% url 'frontend:seller-dashboard' %}"><i class="bi bi-speedometer2 me-2"></i> داشبورد</a></li>
-                            <li><a class="dropdown-item" href="{% url 'frontend:seller-products' %}"><i class="bi bi-box-seam me-2"></i> محصولات</a></li>
-                            <li><a class="dropdown-item" href="{% url 'frontend:seller-orders' %}"><i class="bi bi-cart-check me-2"></i> سفارشات</a></li>
-                            {% if request.user.shop %}
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item text-primary" href="{% url 'frontend:shop-store' request.user.shop.slug %}" target="_blank">
-                                    <i class="bi bi-browser-safari me-2"></i> مشاهده فروشگاه من
-                                </a>
-                            </li>
-                            {% endif %}
-                        </ul>
-                    </li>
-                    {% endif %}
-
-                    <li class="nav-item"><a class="nav-link" href="{% url 'frontend:home' %}">خانه</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'frontend:contact' %}">تماس با ما</a></li>
-
-                    {% if not request.user.is_authenticated %}
-                    <li class="nav-item"><a class="nav-link text-success fw-bold" href="{% url 'frontend:register-page' %}">ثبت‌نام فروشگاه</a></li>
-                    {% endif %}
-                </ul>
-
-                <div class="d-flex align-items-center gap-3">
-                    {% if shop.slug and '/shop/' in request.path %}
-                    <div class="position-relative">
-                        <button class="btn btn-light border position-relative rounded-circle shadow-sm d-flex align-items-center justify-content-center"
-                                style="width: 45px; height: 45px;" type="button" data-bs-toggle="offcanvas" data-bs-target="#cart-sidebar">
-                            <i class="bi bi-cart3 fs-5 text-dark"></i>
-                            <span id="cart-badge-count" 
-                                  hx-get="{% url 'frontend:cart-component' %}?shop_slug={{ shop.slug }}"
-                                  hx-trigger="load, cartUpdated from:body"
-                                  class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle border border-light badge-cart">
-                                0
-                            </span>
-                        </button>
+        <div class="p-4 border-t border-gray-100 bg-gray-50/50">
+            {% if request.user.is_authenticated %}
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
+                        {{ request.user.username|make_list|first|upper }}
                     </div>
-                    {% endif %}
-
-                    {% if request.user.is_authenticated %}
-                    <div class="dropdown">
-                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark" data-bs-toggle="dropdown">
-                            <span class="me-2 small fw-bold d-none d-md-block">{{ request.user.username }}</span>
-                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 35px; height: 35px;">
-                                <i class="bi bi-person-fill"></i>
-                            </div>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 animate__animated animate__fadeIn">
-                            <li><a class="dropdown-item" href="{% url 'frontend:profile' %}"><i class="bi bi-person-circle me-2"></i> پروفایل من</a></li>
-                            <li><a class="dropdown-item" href="{% url 'frontend:seller-settings' %}"><i class="bi bi-gear me-2"></i> تنظیمات فروشگاه</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="{% url 'frontend:logout' %}"><i class="bi bi-box-arrow-right me-2"></i> خروج</a></li>
-                        </ul>
+                    <div class="flex flex-col">
+                        <span class="text-sm font-bold text-gray-900">{{ request.user.username }}</span>
+                        <a href="{% url 'frontend:profile' %}" class="text-xs text-gray-500 hover:text-indigo-600">مشاهده پروفایل</a>
                     </div>
-                    {% else %}
-                    <a href="{% url 'frontend:login' %}" class="btn btn-primary btn-auth shadow-sm">ورود</a>
-                    {% endif %}
+                </div>
+                <a href="{% url 'frontend:logout' %}" class="text-gray-400 hover:text-red-500 transition p-2" title="خروج">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                </a>
+            </div>
+            {% else %}
+            <a href="{% url 'frontend:login' %}" class="flex justify-center w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md shadow-indigo-200 transition font-bold text-sm">
+                ورود / ثبت‌نام
+            </a>
+            {% endif %}
+        </div>
+    </aside>
+
+
+    <main class="flex-1 flex flex-col h-full relative overflow-hidden bg-gray-50">
+        
+        <header class="md:hidden h-16 bg-white/80 backdrop-blur-md border-b border-gray-200 flex items-center justify-between px-4 sticky top-0 z-20">
+            <span class="font-extrabold text-lg text-indigo-700 tracking-tight">InstaStore</span>
+            
+            {% if shop.slug %}
+            <div class="flex items-center gap-3">
+                <button class="relative p-2 text-gray-600 hover:bg-gray-100 rounded-full transition" 
+                        hx-get="{% url 'frontend:cart-sidebar' %}?shop_slug={{ shop.slug }}"
+                        hx-target="#cart-modal-content"
+                        onclick="document.getElementById('cart-modal').classList.remove('hidden')">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                    <span hx-get="{% url 'frontend:cart-component' %}?shop_slug={{ shop.slug }}"
+                          hx-trigger="load, cartUpdated from:body"
+                          class="absolute top-1 left-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full ring-2 ring-white">
+                        0
+                    </span>
+                </button>
+            </div>
+            {% endif %}
+        </header>
+
+        <div id="main-content" class="flex-1 overflow-y-auto p-4 pb-24 md:p-8 scroll-smooth no-scrollbar">
+            
+            {% if messages %}
+            <div class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4 space-y-2 pointer-events-none">
+                {% for message in messages %}
+                <div class="pointer-events-auto flex items-center p-4 mb-4 text-sm rounded-2xl shadow-lg animate-bounce
+                            {% if message.tags == 'success' %}bg-green-500 text-white{% else %}bg-red-500 text-white{% endif %}">
+                    {{ message }}
+                    <button type="button" class="mr-auto" onclick="this.parentElement.remove()">✕</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="fade-in max-w-7xl mx-auto">
+                {% block content %}
+                {% endblock %}
+            </div>
+        </div>
+    </main>
+
+
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 flex justify-between items-center z-40 pb-[env(safe-area-inset-bottom)]">
+        
+        <a href="{% url 'frontend:home' %}" class="flex flex-col items-center gap-1 group">
+            <div class="p-1.5 rounded-xl {% if request.path == '/' %}bg-indigo-50 text-indigo-600{% else %}text-gray-400 group-hover:text-indigo-500{% endif %} transition">
+                <svg class="w-6 h-6" fill="{% if request.path == '/' %}currentColor{% else %}none{% endif %}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            </div>
+            <span class="text-[10px] font-medium {% if request.path == '/' %}text-indigo-600{% else %}text-gray-400{% endif %}">خانه</span>
+        </a>
+
+        <a href="#" class="flex flex-col items-center gap-1 group">
+             <div class="p-1.5 rounded-xl text-gray-400 group-hover:text-indigo-500 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <span class="text-[10px] font-medium text-gray-400">جستجو</span>
+        </a>
+
+        {% if request.user.is_authenticated %}
+        <a href="{% url 'frontend:profile' %}" class="flex flex-col items-center gap-1 group">
+             <div class="p-1.5 rounded-xl text-gray-400 group-hover:text-indigo-500 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            </div>
+            <span class="text-[10px] font-medium text-gray-400">پروفایل</span>
+        </a>
+        {% else %}
+        <a href="{% url 'frontend:login' %}" class="flex flex-col items-center gap-1 group">
+             <div class="p-1.5 rounded-xl text-gray-400 group-hover:text-indigo-500 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            </div>
+            <span class="text-[10px] font-medium text-gray-400">ورود</span>
+        </a>
+        {% endif %}
+    </nav>
+
+    <div id="cart-modal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity" onclick="document.getElementById('cart-modal').classList.add('hidden')"></div>
+
+        <div class="fixed inset-y-0 left-0 w-full max-w-sm bg-white shadow-xl transform transition-transform duration-300 ease-in-out flex flex-col h-full">
+            <div class="flex items-center justify-between p-4 border-b">
+                <h2 class="text-lg font-bold text-gray-900">سبد خرید</h2>
+                <button onclick="document.getElementById('cart-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-500">
+                    <span class="sr-only">بستن</span>
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            
+            <div id="cart-modal-content" class="flex-1 overflow-y-auto p-4">
+                <div class="flex justify-center mt-10">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
                 </div>
             </div>
         </div>
-    </nav>
-
-    <main class="mb-4">
-        {% if messages %}
-        <div class="container mt-3">
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm border-0 animate__animated animate__headShake">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        {% block content %}{% endblock %}
-    </main>
-
-    <footer class="py-4 text-center text-muted small bg-white border-top">
-        <div class="container">
-            <p class="mb-1">© ۱۴۰۳ InstaStore - پلتفرم فروشگاه‌ساز اینستاگرامی</p>
-        </div>
-    </footer>
-
-    {% if shop.slug %}
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="cart-sidebar" dir="rtl" style="width: 400px;"
-         hx-get="{% url 'frontend:cart-sidebar' %}?shop_slug={{ shop.slug }}" 
-         hx-trigger="cartUpdated from:body"
-         hx-swap="innerHTML">
-        <div class="offcanvas-header border-bottom">
-            <h5 class="offcanvas-title fw-bold">سبد خرید</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-        </div>
-        <div class="offcanvas-body d-flex justify-content-center align-items-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">در حال بارگذاری...</span>
-            </div>
-        </div>
     </div>
-    {% endif %}
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // شنونده سراسری برای به‌روزرسانی اجزای صفحه در صورت تغییر سبد خرید
-        document.body.addEventListener('cartUpdated', function(evt) {
-            console.log("Cart updated for shop: {{ shop.slug }}");
-        });
-    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
