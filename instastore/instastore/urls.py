@@ -22,7 +22,7 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    
+    path("__reload__/", include("django_browser_reload.urls")),
     # اپلیکیشن‌های پروژه
     path('', include('frontend.urls')),
     path('shops/', include('shops.urls')),
