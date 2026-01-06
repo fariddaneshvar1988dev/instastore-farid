@@ -1,12 +1,22 @@
 from django.db import models
-from django.contrib.auth.models import User  
+from django.contrib.auth.models import User
+from shops.models import Shop  # اضافه کردن import
 import uuid
 
 class Customer(models.Model):
     """
-    مدل مشتری - نیازی به ثبت‌نام دارد، فقط شماره تلفن کافیست
+    مدل مشتری - هر مشتری متعلق به یک فروشگاه خاص است
     """
-    # اضافه کردن اتصال به یوزر جنگو
+    # اتصال به فروشگاه (اضافه شده)
+    shop = models.ForeignKey(
+        Shop,
+        on_delete=models.CASCADE,
+        related_name='customers',
+        verbose_name='فروشگاه',
+        
+    )
+    
+    # اتصال به یوزر جنگو (اختیاری)
     user = models.OneToOneField(
         User, 
         on_delete=models.SET_NULL, 
@@ -18,8 +28,8 @@ class Customer(models.Model):
 
     phone_number = models.CharField(
         max_length=15,
-        unique=True,  # نکته مهم: این ممکن است برای کاربران مهمان تکراری چالش‌ساز شود
         verbose_name='شماره تلفن'
+        # ❗️ unique=True حذف شد - در سطح shop بررسی می‌شود
     )
     
     # شناسه یکتا برای مشتری
@@ -29,20 +39,13 @@ class Customer(models.Model):
         editable=False
     )
     
-    # اطلاعات مشتری
-    phone_number = models.CharField(
-        max_length=15,
-        unique=True,
-        verbose_name='شماره تلفن'
-    )
-    
     full_name = models.CharField(
         max_length=200,
         blank=True,
         verbose_name='نام کامل'
     )
     
-    # آدرس مشتری (می‌تواند چند آدرس داشته باشد)
+    # آدرس مشتری
     default_address = models.TextField(
         blank=True,
         verbose_name='آدرس پیش‌فرض'
@@ -82,14 +85,38 @@ class Customer(models.Model):
         verbose_name = 'مشتری'
         verbose_name_plural = 'مشتریان'
         ordering = ['-created_at']
+        # 🔥 مهم: شماره تلفن در هر فروشگاه یکتا باشد
+        unique_together = ['shop', 'phone_number']
+        indexes = [
+            models.Index(fields=['shop', 'phone_number']),
+            models.Index(fields=['shop', 'created_at']),
+        ]
     
     def __str__(self):
         if self.full_name:
-            return f"{self.full_name} ({self.phone_number})"
-        return self.phone_number
+            return f"{self.full_name} ({self.phone_number}) - {self.shop.shop_name}"
+        return f"{self.phone_number} ({self.shop.shop_name})"
     
     def update_stats(self, order_amount):
         """به‌روزرسانی آمار مشتری پس از سفارش جدید"""
         self.total_orders += 1
         self.total_spent += order_amount
         self.save()
+    
+    @classmethod
+    def get_or_create_for_shop(cls, shop, phone_number, **extra_fields):
+        """
+        دریافت یا ایجاد مشتری برای یک فروشگاه خاص
+        """
+        try:
+            customer = cls.objects.get(shop=shop, phone_number=phone_number)
+            created = False
+        except cls.DoesNotExist:
+            customer = cls.objects.create(
+                shop=shop,
+                phone_number=phone_number,
+                **extra_fields
+            )
+            created = True
+        
+        return customer, created

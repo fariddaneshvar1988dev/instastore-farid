@@ -1,16 +1,12 @@
 """
 Django settings for instastore project.
-Optimized for Production Environment.
-"""
-
-"""
-Django settings for instastore project.
 Optimized for Production Environment by DevOps Team.
 """
 
 from pathlib import Path
 import os
-from dotenv import load_dotenv  # اضافه شده
+from dotenv import load_dotenv
+from datetime import timedelta
 
 # بارگذاری متغیرها از فایل .env
 load_dotenv()
@@ -19,16 +15,13 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-key-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# اگر در فایل env چیزی نباشد، پیش‌فرض False (امن) در نظر گرفته می‌شود
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 # دامنه‌های مجاز را از env می‌خواند و تبدیل به لیست می‌کند
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1').split(',')
-
-
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -45,37 +38,72 @@ INSTALLED_APPS = [
     'django_filters',
     'drf_yasg',
     'tailwind', # برای مدیریت تلویند
-    'theme',    # نام اپلیکیشنی که استایل‌های ما در آن قرار می‌گیرد (هنوز نساختیم)
+    'theme',    # نام اپلیکیشنی که استایل‌های ما در آن قرار می‌گیرد
     'django_browser_reload', # رفرش خودکار
     'django_htmx', # ابزارهای کمکی htmx
-    # 'corsheaders',  # فعلاً غیرفعال کنید
     
     # Local apps
-    'shops',
+    'shops.apps.ShopsConfig',
     'customers',
     'orders',
     'products',
     'frontend',
-    'django_prometheus',#monitoring
-    
+    'django_prometheus', # monitoring
 ]
+
+# تنظیمات Swagger
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        },
+        'Basic': {
+            'type': 'basic'
+        }
+    },
+    'USE_SESSION_AUTH': True,
+    'LOGIN_URL': '/admin/login/',
+    'LOGOUT_URL': '/admin/logout/',
+    'JSON_EDITOR': True,
+    'DEFAULT_MODEL_RENDERING': 'example',
+    'DEEP_LINKING': True,
+    'PERSIST_AUTH': True,
+    'REFETCH_SCHEMA_ON_LOGOUT': True,
+    'VALIDATOR_URL': None,
+    'OPERATIONS_SORTER': 'alpha',
+    'TAGS_SORTER': 'alpha',
+    'DOC_EXPANSION': 'none',
+    'SHOW_REQUEST_HEADERS': True,
+    'SUPPORTED_SUBMIT_METHODS': ['get', 'post', 'put', 'delete', 'patch'],
+    'DISPLAY_OPERATION_ID': False,
+}
+
+REDOC_SETTINGS = {
+    'LAZY_RENDERING': False,
+    'NATIVE_SCROLLBARS': False,
+    'REQUIRED_PROPS_FIRST': True,
+    'SORT_OPERATIONS_BY': 'method',
+    'THEME': 'light',
+}
 
 MIDDLEWARE = [
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # اگر نصب کرده‌اید
-    # 'corsheaders.middleware.CorsMiddleware',  # اگر نیاز به CORS دارید
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-
-    "django_htmx.middleware.HtmxMiddleware",
-    "django_browser_reload.middleware.BrowserReloadMiddleware",
-    
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
+    # Middlewareهای سفارشی
     'shops.middleware.ShopMiddleware',
+    'django_htmx.middleware.HtmxMiddleware',
+    'django_browser_reload.middleware.BrowserReloadMiddleware',
+    
     'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
@@ -94,16 +122,16 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'frontend.context_processors.cart_context',
             ],
+            # برای دیباگ بهتر
+            'string_if_invalid': 'INVALID_TEMPLATE_VAR',
         },
     },
 ]
 
 WSGI_APPLICATION = 'instastore.wsgi.application'
 
-
 # Database
-# Database Configuration
-# اگر متغیرهای محیطی دیتابیس وجود داشت (یعنی توی داکر هستیم)، از پستگرس استفاده کن
+# اگر متغیرهای محیطی دیتابیس وجود داشت (در داکر)، از پستگرس استفاده کن
 if os.environ.get('DB_NAME'):
     DATABASES = {
         'default': {
@@ -116,13 +144,14 @@ if os.environ.get('DB_NAME'):
         }
     }
 else:
-    # در غیر این صورت (توسعه لوکال معمولی) از همون SQLite استفاده کن
+    # در محیط توسعه لوکال از SQLite استفاده کن
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -142,13 +171,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 LANGUAGE_CODE = 'fa-ir'
 TIME_ZONE = 'Asia/Tehran'
 USE_I18N = True
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
@@ -183,14 +210,9 @@ CSRF_COOKIE_SAMESITE = 'Lax'
 CSRF_TRUSTED_ORIGINS = [
     'https://instavitrin.ir',
     'https://www.instavitrin.ir',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
 ]
-
-# CORS settings (فعلاً غیرفعال)
-# CORS_ALLOWED_ORIGINS = [
-#     "https://instavitrin.ir",
-#     "https://www.instavitrin.ir",
-# ]
-# CORS_ALLOW_CREDENTIALS = True
 
 # Security Headers
 SECURE_BROWSER_XSS_FILTER = True
@@ -202,14 +224,18 @@ SECURE_REFERRER_POLICY = 'same-origin'
 SECURE_SSL_REDIRECT = False
 SECURE_HSTS_SECONDS = 0
 
-# اگر whitenoise نصب ندارید، این خط را کامنت کنید
+# اگر whitenoise نصب دارید، این خط را فعال کنید
 # STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Logging - نسخه ساده برای توسعه
+# Logging - نسخه بهبود یافته برای دیباگ
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
         'simple': {
             'format': '{levelname} {message}',
             'style': '{',
@@ -219,7 +245,13 @@ LOGGING = {
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
-            'formatter': 'simple',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'debug.log'),
+            'formatter': 'verbose',
         },
     },
     'loggers': {
@@ -228,35 +260,149 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True,
         },
+        'django.request': {
+            'handlers': ['console', 'file'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
         'instastore': {
             'handlers': ['console'],
-            'level': 'INFO',
+            'level': 'DEBUG' if DEBUG else 'INFO',
             'propagate': False,
+        },
+        'drf_yasg': {
+            'handlers': ['console'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': True,
         },
     },
 }
 
-# DRF settings
+# REST Framework settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.openapi.AutoSchema',
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser',
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/day',
+        'user': '1000/day'
+    },
 }
 
 # Zarinpal payment gateway
 ZARINPAL_MERCHANT_ID = os.environ.get('ZARINPAL_MERCHANT_ID', 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx')
+
 # --- Tailwind Configuration ---
-# نام اپلیکیشنی که فایل‌های تلویند در آن ساخته می‌شود
 TAILWIND_APP_NAME = 'theme'
 
-# تنظیمات برای اینکه جنگو بداند NPM (مدیر پکیج نود) کجاست
-# در ویندوز معمولاً نیاز به تنظیم خاصی نیست، اما اگر خطا داد باید مسیرش را بدهیم
+# تنظیمات NPM
 NPM_BIN_PATH = r"C:/Program Files/nodejs/npm.cmd"
+
 # --- Browser Reload Config ---
-# این تنظیم برای این است که ابزار رفرش خودکار فقط در حالت دیباگ کار کند
 INTERNAL_IPS = [
     "127.0.0.1",
+    "localhost",
 ]
+
+# تنظیمات ایمیل (در صورت نیاز)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend' if DEBUG else 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'webmaster@localhost')
+
+# تنظیمات کش (در صورت نیاز)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
+
+# تنظیمات فایل آپلود
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+
+# تنظیمات امنیتی اضافی برای production
+if not DEBUG:
+    # امنیت SSL
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # کوکی‌های امن
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # هدرهای امنیتی
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_REFERRER_POLICY = 'same-origin'
+    
+    # Whitenoise برای static files
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# تنظیمات سفارشی پروژه
+INSTASTORE_CONFIG = {
+    'SITE_NAME': 'InstaStore',
+    'SITE_DOMAIN': 'instavitrin.ir',
+    'SUPPORT_EMAIL': 'support@instavitrin.ir',
+    'SUPPORT_PHONE': '۰۲۱-۱۲۳۴۵۶۷۸',
+    'DEFAULT_CURRENCY': 'ریال',
+    'DEFAULT_LANGUAGE': 'fa',
+    'MAX_PRODUCTS_PER_SHOP': 100,
+    'MAX_IMAGES_PER_PRODUCT': 5,
+    'ORDER_STATUSES': {
+        'pending': 'در انتظار پرداخت',
+        'paid': 'پرداخت شده',
+        'processing': 'در حال پردازش',
+        'shipped': 'ارسال شده',
+        'delivered': 'تحویل داده شده',
+        'canceled': 'لغو شده',
+        'refunded': 'مرجوع شده',
+    },
+}
+
+# تنظیمات CORS (در صورت نیاز API خارجی)
+# CORS_ALLOWED_ORIGINS = [
+#     "https://instavitrin.ir",
+#     "https://www.instavitrin.ir",
+#     "http://localhost:3000",
+#     "http://127.0.0.1:3000",
+# ]
+# CORS_ALLOW_CREDENTIALS = True
+
+# تنظیمات Celery (در صورت نیاز پردازش‌های پس‌زمینه)
+# CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+# CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+
+print(f"✅ Django settings loaded successfully. DEBUG={DEBUG}")
