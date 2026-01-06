@@ -1,27 +1,32 @@
 from django.contrib import admin
-
-# Register your models here.
-from django.contrib import admin
 from .models import Customer
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ('phone_number', 'full_name', 'total_orders', 'total_spent', 'is_active', 'created_at')
-    list_filter = ('is_active', 'created_at')
-    search_fields = ('phone_number', 'full_name')
-    readonly_fields = ('total_orders', 'total_spent', 'created_at', 'last_seen')
+    list_display = ('phone_number', 'full_name', 'shop', 'total_orders', 'total_spent', 'created_at')
+    list_filter = ('shop', 'is_active', 'created_at')
+    search_fields = ('phone_number', 'full_name', 'shop__shop_name')
+    readonly_fields = ('id', 'created_at', 'last_seen', 'total_orders', 'total_spent')
+    
     fieldsets = (
         ('اطلاعات مشتری', {
-            'fields': ('phone_number', 'full_name', 'default_address')
+            'fields': ('shop', 'phone_number', 'full_name', 'default_address')
         }),
-        ('آمار خرید', {
-            'fields': ('total_orders', 'total_spent')
+        ('اطلاعات کاربر', {
+            'fields': ('user',)
         }),
-        ('تنظیمات', {
-            'fields': ('is_active',)
+        ('آمار و وضعیت', {
+            'fields': ('is_active', 'total_orders', 'total_spent', 'last_seen')
         }),
-        ('تاریخ‌ها', {
-            'fields': ('created_at', 'last_seen'),
+        ('اطلاعات سیستمی', {
+            'fields': ('id', 'created_at'),
             'classes': ('collapse',)
         }),
     )
+    
+    def get_queryset(self, request):
+        # فقط مشتریان فروشگاه‌های فعال را نشان بده
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(shop__is_active=True)

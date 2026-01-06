@@ -1,25 +1,32 @@
+# products/views.py
 from rest_framework import generics, filters
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend  # این خط را اصلاح کردیم
-from .models import Product, Category
+from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Sum
+from .models import Product, Category, ProductVariant
 from .serializers import ProductListSerializer, ProductDetailSerializer, CategorySerializer
 
 class ProductListAPIView(generics.ListAPIView):
     """لیست محصولات یک فروشگاه"""
     serializer_class = ProductListSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category', 'is_available', 'size', 'color', 'brand']
+    filterset_fields = ['category', 'is_active', 'brand']
     search_fields = ['name', 'description', 'brand', 'material']
-    ordering_fields = ['price', 'created_at', 'views']
+    ordering_fields = ['base_price', 'created_at', 'views']
     ordering = ['-created_at']
     
     def get_queryset(self):
         """فقط محصولات فروشگاه جاری"""
-        shop = self.request.shop  # از middleware می‌آید
+        shop = getattr(self.request, 'shop', None)
+        if not shop:
+            return Product.objects.none()
+            
         return Product.objects.filter(
             shop=shop,
-            is_available=True
-        ).select_related('category', 'shop')
+            is_active=True
+        ).select_related('category', 'shop').annotate(
+            total_stock=Sum('variants__stock')
+        )
 
 class ProductDetailAPIView(generics.RetrieveAPIView):
     """نمایش جزئیات یک محصول"""
@@ -28,8 +35,18 @@ class ProductDetailAPIView(generics.RetrieveAPIView):
     lookup_url_kwarg = 'product_id'
     
     def get_queryset(self):
-        shop = self.request.shop
-        return Product.objects.filter(shop=shop)
+        shop = getattr(self.request, 'shop', None)
+        if not shop:
+            return Product.objects.none()
+            
+        return Product.objects.filter(
+            shop=shop,
+            is_active=True
+        ).select_related('category', 'shop').prefetch_related(
+            'images', 'variants'
+        ).annotate(
+            total_stock=Sum('variants__stock')
+        )
     
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -46,9 +63,12 @@ class CategoryListAPIView(generics.ListAPIView):
     serializer_class = CategorySerializer
     
     def get_queryset(self):
-        shop = self.request.shop
+        shop = getattr(self.request, 'shop', None)
+        if not shop:
+            return Category.objects.none()
+            
         # دسته‌بندی‌هایی که محصول فعال در این فروشگاه دارند
         return Category.objects.filter(
             products__shop=shop,
-            products__is_available=True
+            products__is_active=True
         ).distinct()
