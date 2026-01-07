@@ -43,11 +43,13 @@ INSTALLED_APPS = [
     'django_htmx', # ابزارهای کمکی htmx
     
     # Local apps
+    
+    'customers.apps.CustomersConfig',
+    'orders.apps.OrdersConfig',
+    'products.apps.ProductsConfig',
+    'frontend.apps.FrontendConfig',
     'shops.apps.ShopsConfig',
-    'customers',
-    'orders',
-    'products',
-    'frontend',
+    'logs.apps.LogsConfig',
     'django_prometheus', # monitoring
 ]
 
